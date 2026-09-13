@@ -19,9 +19,9 @@ import { environment } from '../environments/environment';
 export function MSALInstanceFactory(): IPublicClientApplication {
   return new PublicClientApplication({
     auth: {
-      clientId: environment.azureAd.clientId,
-      authority: environment.azureAd.authority,
-      redirectUri: environment.azureAd.redirectUri
+      clientId: environment.msalConfig.auth.clientId,
+      authority: environment.msalConfig.auth.authority,
+      redirectUri: environment.msalConfig.auth.redirectUri
     },
     cache: { cacheLocation: 'localStorage' }
   });
@@ -29,7 +29,8 @@ export function MSALInstanceFactory(): IPublicClientApplication {
 
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  protectedResourceMap.set(`${environment.bffUrl}/*`, [`api://${environment.azureAd.clientId}/access_as_user`]);
+  // Adjunta el token de Azure automáticamente a las peticiones que vayan al BFF
+  protectedResourceMap.set(`${environment.bffUrl}/*`, environment.apiConfig.scopes);
   return {
     interactionType: InteractionType.Redirect,
     protectedResourceMap
@@ -49,7 +50,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptorsFromDi()), // Aquí sí lleva paréntesis ()
+    provideHttpClient(withInterceptorsFromDi()),
     {
       provide: HTTP_INTERCEPTORS,
       useClass: MsalInterceptor,
