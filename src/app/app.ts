@@ -8,8 +8,8 @@ import { filter } from 'rxjs/operators';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, RouterLink],
-  templateUrl: './app.html', // o './app.component.html'
-  styleUrl: './app.css'     // o './app.component.css'
+  templateUrl: './app.html',
+  styleUrl: './app.css'
 })
 export class App implements OnInit {
     protected readonly title = signal('ngfrontend-campuslab');
@@ -50,11 +50,12 @@ export class App implements OnInit {
         }
     }
 
-login(): void {
-    this.msalService.loginRedirect({
-        scopes: ['user.read']
-    });
-}
+    login(): void {
+        this.msalService.loginRedirect({
+            scopes: ['user.read']
+        });
+    }
+
     logout(): void {
         this.msalService.logoutRedirect();
     }

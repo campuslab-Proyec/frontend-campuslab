@@ -1,8 +1,14 @@
 import { Routes } from '@angular/router';
 import { MsalGuard } from '@azure/msal-angular';
 import { Bookings } from './bookings/bookings';
+import { CatalogComponent } from './catalog/catalog';
 
 export const routes: Routes = [
+    { 
+        path: 'catalog', 
+        component: CatalogComponent, 
+        canActivate: [MsalGuard]
+    },
     { 
         path: 'bookings', 
         component: Bookings, 
@@ -10,7 +16,7 @@ export const routes: Routes = [
     },
     { 
         path: '', 
-        redirectTo: 'bookings', 
+        redirectTo: 'catalog', 
         pathMatch: 'full' 
     }
 ];

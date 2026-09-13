@@ -1,27 +1,36 @@
-<header style="padding: 1rem; background-color: #f4f4f4; border-bottom: 1px solid #ccc;">
-    <h1>CampusLab - Sistema de Reservas</h1>
+<header style="padding: 1rem 2rem; background-color: #1e293b; color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155;">
+    <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">CampusLab - Sistema de Gestión</h1>
+    </div>
 
-    <nav style="margin-bottom: 1rem;">
-        <a routerLink="/bookings">Reservas</a>
-    </nav>
+    @if (isLoggedIn) {
+        <nav style="display: flex; gap: 1.5rem;">
+            <a routerLink="/catalog" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Catálogo</a>
+            <a routerLink="/bookings" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Reservas</a>
+        </nav>
+    }
 
     <div>
         @if (!isLoggedIn) {
-            <button (click)="login()">Iniciar Sesión con Microsoft</button>
+            <button (click)="login()" style="padding: 0.5rem 1rem; background-color: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                Iniciar Sesión con Microsoft
+            </button>
         } @else {
-            <button (click)="logout()">Cerrar Sesión</button>
+            <button (click)="logout()" style="padding: 0.5rem 1rem; background-color: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Cerrar Sesión
+            </button>
         }
     </div>
 </header>
 
 <main style="padding: 2rem;">
     @if (!isLoggedIn) {
-        <section>
+        <section style="text-align: center; margin-top: 3rem;">
             <h2>Bienvenido a CampusLab</h2>
-            <p>Por favor inicia sesión con tu cuenta institucional para continuar.</p>
+            <p style="color: #64748b;">Por favor inicia sesión con tu cuenta institucional de Azure AD para acceder al catálogo y reservas.</p>
         </section>
+    } @else {
+        <!-- Vista de las rutas protegidas -->
+        <router-outlet></router-outlet>
     }
-
-    <!-- Vista de las rutas protegidas -->
-    <router-outlet></router-outlet>
 </main>
