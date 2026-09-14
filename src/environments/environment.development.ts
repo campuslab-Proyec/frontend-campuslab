@@ -12,4 +12,5 @@ export const environment = {
     uri: 'http://localhost:8080/api/bff/' 
   },
   bffUrl: 'http://localhost:8080/api/bff'
+  
 };
