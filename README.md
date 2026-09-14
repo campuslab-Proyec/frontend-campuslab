@@ -1,59 +1,40 @@
-# NgfrontendCampuslab
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.24.
+# CampusLab Frontend
 
-## Development server
+Aplicación cliente de interfaz gráfica que permite a los usuarios interactuar con la plataforma CampusLab para gestionar y consultar laboratorios y recursos.
 
-To start a local development server, run:
+## 🛠️ Tecnologías Utilizadas
 
-```bash
-ng serve
-```
+* **Node.js** (v18+)
+* **Framework Web:** React / Angular / Vue.js / HTML5 + JavaScript (ES6+)
+* **Axios / Fetch API** (Consumo del microservicio BFF)
+* **Gestor de Paquetes:** npm / yarn / pnpm
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## 📋 Requisitos Previos
 
-## Code scaffolding
+1. **Node.js** v18.0.0 o superior instalado.
+2. **npm** (o el gestor de paquetes de tu preferencia).
+3. El microservicio **`ms-campuslab-bff`** ejecutándose en `http://localhost:8080`.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## 🚀 Instalación y Ejecución
 
-```bash
-ng generate component component-name
-```
+1. **Clonar el repositorio:**
+   ```bash
+   git clone <URL_DEL_REPOSITORIO>
+   cd campuslab-frontend
+Instalar dependencias:
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Bash
+npm install
+Configurar variables de entorno:
+Crea un archivo .env en la raíz con la dirección del BFF:
 
-```bash
-ng generate --help
-```
+Fragmento de código
+VITE_API_URL=http://localhost:8080
+# O REACT_APP_API_URL=http://localhost:8080
+Ejecutar en entorno de desarrollo:
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Bash
+npm run dev
+# o npm start
+La aplicación frontend estará disponible por defecto en: http://localhost:5173 o http://localhost:3000
