@@ -4,63 +4,63 @@ import { FormsModule } from '@angular/forms';
 import { CatalogService, Laboratory, Resource } from '../services/catalog.service';
 
 @Component({
-  selector: 'app-catalog',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './catalog.component.html',
-  styleUrls: ['./catalog.component.css']
+    selector: 'app-catalog',
+    standalone: true,
+    imports: [CommonModule, FormsModule],
+    templateUrl: './catalog.component.html',
+    styleUrls: ['./catalog.component.css']
 })
 export class CatalogComponent implements OnInit {
-  activeTab: 'labs' | 'resources' = 'labs';
-  
-  laboratories: Laboratory[] = [];
-  resources: Resource[] = [];
+    activeTab: 'labs' | 'resources' = 'labs';
+    
+    laboratories: Laboratory[] = [];
+    resources: Resource[] = [];
 
-  labForm: Laboratory = { name: '', code: '', location: '', capacity: 0, description: '' };
-  resourceForm: Resource = { name: '', code: '', category: '', stock: 0, description: '' };
+    labForm: Laboratory = { name: '', code: '', location: '', capacity: 0, description: '' };
+    resourceForm: Resource = { name: '', code: '', category: '', stock: 0, description: '' };
 
-  constructor(private catalogService: CatalogService) {}
+    constructor(private catalogService: CatalogService) {}
 
-  ngOnInit(): void {
-    this.loadData();
-  }
+    ngOnInit(): void {
+        this.loadData();
+}
 
-  setTab(tab: 'labs' | 'resources'): void {
+setTab(tab: 'labs' | 'resources'): void {
     this.activeTab = tab;
     this.loadData();
-  }
+}
 
-  loadData(): void {
+loadData(): void {
     if (this.activeTab === 'labs') {
-      this.catalogService.getLaboratories().subscribe({
+    this.catalogService.getLaboratories().subscribe({
         next: (data) => this.laboratories = data,
         error: (err) => console.error('Error al cargar laboratorios:', err)
-      });
+    });
     } else {
-      this.catalogService.getResources().subscribe({
+    this.catalogService.getResources().subscribe({
         next: (data) => this.resources = data,
         error: (err) => console.error('Error al cargar recursos:', err)
-      });
+    });
     }
-  }
+}
 
-  onSubmitLab(): void {
+onSubmitLab(): void {
     this.catalogService.createLaboratory(this.labForm).subscribe({
-      next: () => {
+    next: () => {
         this.labForm = { name: '', code: '', location: '', capacity: 0, description: '' };
         this.loadData();
-      },
-      error: (err) => console.error('Error al crear laboratorio:', err)
+    },
+    error: (err) => console.error('Error al crear laboratorio:', err)
     });
-  }
+}
 
-  onSubmitResource(): void {
+onSubmitResource(): void {
     this.catalogService.createResource(this.resourceForm).subscribe({
-      next: () => {
+    next: () => {
         this.resourceForm = { name: '', code: '', category: '', stock: 0, description: '' };
         this.loadData();
-      },
-      error: (err) => console.error('Error al crear recurso:', err)
+    },
+    error: (err) => console.error('Error al crear recurso:', err)
     });
-  }
+}
 }
