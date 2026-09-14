@@ -1,55 +1,55 @@
 <div className="catalog-container">
-  <h2>🎓 Gestión de Catálogo</h2>
+<h2>🎓 Gestión de Catálogo</h2>
 
-  <!-- Navegación de Pestañas -->
-  <div class="tabs">
+<!-- Navegación de Pestañas -->
+<div class="tabs">
     <button [class.active]="activeTab === 'labs'" (click)="setTab('labs')">Laboratorios</button>
     <button [class.active]="activeTab === 'resources'" (click)="setTab('resources')">Recursos</button>
-  </div>
+</div>
 
-  <!-- Vista Laboratorios -->
-  <div *ngIf="activeTab === 'labs'" class="section-content">
+<!-- Vista Laboratorios -->
+<div *ngIf="activeTab === 'labs'" class="section-content">
     <form (ngSubmit)="onSubmitLab()" class="catalog-form">
-      <h3>Registrar Laboratorio</h3>
-      <div class="form-group">
-        <input [(ngModel)]="labForm.code" name="code" placeholder="Código" required />
-        <input [(ngModel)]="labForm.name" name="name" placeholder="Nombre" required />
-        <input [(ngModel)]="labForm.location" name="location" placeholder="Ubicación" required />
-        <input [(ngModel)]="labForm.capacity" name="capacity" type="number" placeholder="Capacidad" required />
-      </div>
-      <button type="submit" class="btn-primary">Guardar Laboratorio</button>
+        <h3>Registrar Laboratorio</h3>
+        <div class="form-group">
+            <input [(ngModel)]="labForm.code" name="code" placeholder="Código" required />
+            <input [(ngModel)]="labForm.name" name="name" placeholder="Nombre" required />
+            <input [(ngModel)]="labForm.location" name="location" placeholder="Ubicación" required />
+            <input [(ngModel)]="labForm.capacity" name="capacity" type="number" placeholder="Capacidad" required />
+        </div>
+        <button type="submit" class="btn-primary">Guardar Laboratorio</button>
     </form>
 
     <div class="list-container">
-      <h3>Listado de Laboratorios</h3>
-      <ul>
+    <h3>Listado de Laboratorios</h3>
+    <ul>
         <li *ngFor="let lab of laboratories" class="card-item">
-          <strong>[{{ lab.code }}] {{ lab.name }}</strong> - Ubicación: {{ lab.location }} (Capacidad: {{ lab.capacity }})
+        <strong>[{{ lab.code }}] {{ lab.name }}</strong> - Ubicación: {{ lab.location }} (Capacidad: {{ lab.capacity }})
         </li>
-      </ul>
+    </ul>
     </div>
-  </div>
+</div>
 
-  <!-- Vista Recursos -->
-  <div *ngIf="activeTab === 'resources'" class="section-content">
+<!-- Vista Recursos -->
+<div *ngIf="activeTab === 'resources'" class="section-content">
     <form (ngSubmit)="onSubmitResource()" class="catalog-form">
-      <h3>Registrar Recurso</h3>
-      <div class="form-group">
+    <h3>Registrar Recurso</h3>
+    <div class="form-group">
         <input [(ngModel)]="resourceForm.code" name="code" placeholder="Código" required />
         <input [(ngModel)]="resourceForm.name" name="name" placeholder="Nombre" required />
         <input [(ngModel)]="resourceForm.category" name="category" placeholder="Categoría" required />
         <input [(ngModel)]="resourceForm.stock" name="stock" type="number" placeholder="Stock Initial" required />
-      </div>
-      <button type="submit" class="btn-primary">Guardar y Enviar Notificación</button>
+    </div>
+    <button type="submit" class="btn-primary">Guardar y Enviar Notificación</button>
     </form>
 
     <div class="list-container">
-      <h3>Inventario de Recursos</h3>
-      <ul>
+    <h3>Inventario de Recursos</h3>
+    <ul>
         <li *ngFor="let res of resources" class="card-item">
-          <strong>[{{ res.code }}] {{ res.name }}</strong> - Categoría: {{ res.category }} (Stock: {{ res.stock }})
+        <strong>[{{ res.code }}] {{ res.name }}</strong> - Categoría: {{ res.category }} (Stock: {{ res.stock }})
         </li>
-      </ul>
+    </ul>
     </div>
-  </div>
+</div>
 </div>
