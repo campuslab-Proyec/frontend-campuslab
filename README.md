@@ -1,10 +1,4 @@
----
 
-### 3. `README.md` para el Frontend (ejemplo en React / Angular / Vue)
-
-> *Ajusta este README según el framework Frontend exacto que utilices en tu proyecto.*
-
-```markdown
 # CampusLab Frontend
 
 Aplicación cliente de interfaz gráfica que permite a los usuarios interactuar con la plataforma CampusLab para gestionar y consultar laboratorios y recursos.
