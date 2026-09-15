@@ -1,0 +1,70 @@
+<div style="padding: 20px;">
+  <h2>Gestión de Reservas</h2>
+
+  @if (error()) {
+  <p style="color: red;">Error: {{ error() }}</p>
+  }
+
+  <div class="filter-bar">
+    <label for="statusFilter">Filtrar por estado:</label>
+    <select id="statusFilter" [(ngModel)]="filterStatus" (change)="onFilterChange()">
+      <option value="">Todos</option>
+      @for (status of statusOptions; track status) {
+      <option [value]="status">{{ status }}</option>
+      }
+    </select>
+  </div>
+
+  <form class="booking-form" (ngSubmit)="createBooking()">
+    <h3>Nueva reserva</h3>
+    <div class="form-row">
+      <input type="text" placeholder="ID del recurso (ej. LAB-01)" [(ngModel)]="newBooking.resourceId" name="resourceId" required>
+      <input type="text" placeholder="ID del estudiante" [(ngModel)]="newBooking.studentId" name="studentId" required>
+    </div>
+    <div class="form-row">
+      <input type="datetime-local" [(ngModel)]="newBooking.from" name="from" required>
+      <input type="datetime-local" [(ngModel)]="newBooking.to" name="to" required>
+    </div>
+    <button type="submit">Crear reserva</button>
+  </form>
+
+  @if (loading()) {
+  <p>Cargando reservas desde la API...</p>
+  } @else if (bookings().length === 0) {
+  <p>No hay reservas para mostrar.</p>
+  } @else {
+  <table class="bookings-table">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Recurso</th>
+      <th>Estudiante</th>
+      <th>Desde</th>
+      <th>Hasta</th>
+      <th>Estado</th>
+      <th>Cambiar estado</th>
+    </tr>
+    </thead>
+    <tbody>
+    @for (item of bookings(); track item.id) {
+    <tr>
+      <td>{{ item.id }}</td>
+      <td>{{ item.resourceId }}</td>
+      <td>{{ item.studentId }}</td>
+      <td>{{ item.from | date:'short' }}</td>
+      <td>{{ item.to | date:'short' }}</td>
+      <td><span class="status-badge" [class]="item.status?.toLowerCase()">{{ item.status }}</span></td>
+      <td>
+        <select (change)="changeStatus(item, $any($event.target).value)">
+          <option value="" disabled selected>Seleccionar...</option>
+          @for (status of statusOptions; track status) {
+          <option [value]="status">{{ status }}</option>
+          }
+        </select>
+      </td>
+    </tr>
+    }
+    </tbody>
+  </table>
+  }
+</div>
