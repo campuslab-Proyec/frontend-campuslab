@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+# Etapa 1: Compilación de Angular
+>>>>>>> 17f2986bd85ded55dda122e737f9d0dc34fa841b
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./

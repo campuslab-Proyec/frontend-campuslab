@@ -1,0 +1,63 @@
+<div style="padding: 20px;">
+  <h2>Panel de Operaciones</h2>
+
+  @if (error()) {
+  <p style="color: red;">Error: {{ error() }}</p>
+  }
+
+  <div class="filter-bar">
+    <label for="rangeFilter">Rango:</label>
+    <select id="rangeFilter" [(ngModel)]="range" (change)="onRangeChange()">
+      @for (option of rangeOptions; track option.value) {
+      <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+  </div>
+
+  @if (loading()) {
+  <p>Cargando reporte desde la API...</p>
+  } @else {
+  @if (kpis(); as kpi) {
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-value">{{ kpi.totalBookings }}</span>
+      <span class="kpi-label">Reservas totales</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">{{ kpi.activeBookings }}</span>
+      <span class="kpi-label">Reservas activas</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">{{ kpi.completedBookings }}</span>
+      <span class="kpi-label">Reservas completadas</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-value">{{ kpi.avgCycleTimeMinutes | number:'1.0-1' }} min</span>
+      <span class="kpi-label">Tiempo de ciclo promedio</span>
+    </div>
+  </div>
+  }
+
+  <h3>Recursos más solicitados</h3>
+  @if (topResources().length === 0) {
+  <p>No hay datos de recursos para este rango.</p>
+  } @else {
+  <table class="resources-table">
+    <thead>
+    <tr>
+      <th>Recurso</th>
+      <th>Total de reservas</th>
+    </tr>
+    </thead>
+    <tbody>
+    @for (resource of topResources(); track resource.resourceId) {
+    <tr>
+      <td>{{ resource.resourceId }}</td>
+      <td>{{ resource.totalBookings }}</td>
+    </tr>
+    }
+    </tbody>
+  </table>
+  }
+  }
+</div>

@@ -21,6 +21,21 @@ export const msalConfig: Configuration = {
 export const protectedResources = {
   bffApi: {
     endpoint: 'http://localhost:8080/api/bff/',
-    scopes: ['api://718a6ef2-45a4-4f06-84c9-6f54de8c3514/access_as_user']
+    scopes: ['api://8d19bb45-1842-43ce-b76c-4513b979df81/access_as_user']
   }
+};
+
+export const apiConfig = {
+  scopes: ['api://8d19bb45-1842-43ce-b76c-4513b979df81/access_as_user'],
+  uri: 'http://localhost:8080/api/bff/'
+};
+
+export const bffUrl = 'http://localhost:8080/api/bff';
+
+export const environment = {
+  production: false,
+  msalConfig,
+  protectedResources,
+  apiConfig,
+  bffUrl
 };

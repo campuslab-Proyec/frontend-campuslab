@@ -1,0 +1,44 @@
+<div style="padding: 20px;">
+  <h2>Auditoría de Eventos Académicos</h2>
+
+  @if (error()) {
+  <p style="color: red;">Error: {{ error() }}</p>
+  }
+
+  <form class="search-form" (ngSubmit)="search()">
+    <input type="text" placeholder="ID de reserva" [(ngModel)]="bookingId" name="bookingId">
+    <input type="text" placeholder="ID de usuario/actor" [(ngModel)]="actorId" name="actorId">
+    <button type="submit">Buscar</button>
+  </form>
+
+  @if (loading()) {
+  <p>Buscando eventos desde la API...</p>
+  } @else if (searched() && events().length === 0) {
+  <p>No se encontraron eventos para esa búsqueda.</p>
+  } @else if (events().length > 0) {
+  <table class="audit-table">
+    <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Reserva</th>
+      <th>Acción</th>
+      <th>Usuario</th>
+      <th>Rol</th>
+      <th>Detalle</th>
+    </tr>
+    </thead>
+    <tbody>
+    @for (item of events(); track item.id) {
+    <tr>
+      <td>{{ item.timestamp | date:'medium' }}</td>
+      <td>{{ item.bookingId }}</td>
+      <td><span class="action-badge">{{ item.action }}</span></td>
+      <td>{{ item.actorId }}</td>
+      <td>{{ item.actorRole }}</td>
+      <td>{{ item.detail || '—' }}</td>
+    </tr>
+    }
+    </tbody>
+  </table>
+  }
+</div>
