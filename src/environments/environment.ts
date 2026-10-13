@@ -1,16 +1,18 @@
 import { Configuration, LogLevel } from '@azure/msal-browser';
 
-// Detecta automáticamente http://localhost/ o la IP/dominio del servidor actual (ej. http://3.90.143.94)
-const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+// Forzamos el uso de la URL segura de ngrok
+const ngrokUrl = 'https://handoff-sprint-protrude.ngrok-free.dev';
+
+// Mantenemos tu configuración dinámica para el backend
 const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
 const bffBaseUrl = `http://${currentHost}:8080/api/bff`;
 
 export const msalConfig: Configuration = {
   auth: {
-    clientId: '65c89996-b6aa-4d5a-8431-4a8ae3bc606b',
-    authority: 'https://login.microsoftonline.com/aff2eb38-d6cf-4220-8527-53f1cb6aed15',
-    redirectUri: `${currentOrigin}/`,
-    postLogoutRedirectUri: `${currentOrigin}/`
+    clientId: '718a6ef2-45a4-4f06-84c9-6f54de8c3514', // Actualizado con tu Client ID correcto
+    authority: 'https://login.microsoftonline.com/common',
+    redirectUri: `${ngrokUrl}/`, // Forzado a usar el túnel HTTPS
+    postLogoutRedirectUri: `${ngrokUrl}/`
   },
   cache: {
     cacheLocation: 'localStorage'
@@ -44,8 +46,8 @@ export const environment = {
   apiConfig,
   bffUrl,
   azure: {
-    clientId: '65c89996-b6aa-4d5a-8431-4a8ae3bc606b',
+    clientId: '718a6ef2-45a4-4f06-84c9-6f54de8c3514', // Actualizado
     tenantId: 'aff2eb38-d6cf-4220-8527-53f1cb6aed15',
-    redirectUri: 'http://3.90.143.94'
+    redirectUri: `${ngrokUrl}/` // Actualizado
   }
 };
