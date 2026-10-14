@@ -32,19 +32,19 @@ export class CatalogService {
 
   // Métodos para Laboratorios
   getLaboratories(): Observable<Laboratory[]> {
-    return this.http.get<Laboratory[]>(`${this.baseUrl}/laboratories`);
+    return this.http.get<Laboratory[]>(`${this.baseUrl}/catalog/labs`);
   }
 
   createLaboratory(laboratory: Laboratory): Observable<Laboratory> {
-    return this.http.post<Laboratory>(`${this.baseUrl}/laboratories`, laboratory);
+    return this.http.post<Laboratory>(`${this.baseUrl}/catalog/labs`, laboratory);
   }
 
   // Métodos para Recursos
   getResources(): Observable<Resource[]> {
-    return this.http.get<Resource[]>(`${this.baseUrl}/resources`);
+    return this.http.get<Resource[]>(`${this.baseUrl}/catalog/resources`);
   }
 
   createResource(resource: Resource): Observable<Resource> {
-    return this.http.post<Resource>(`${this.baseUrl}/resources`, resource);
+    return this.http.post<Resource>(`${this.baseUrl}/catalog/resources`, resource);
   }
 }
