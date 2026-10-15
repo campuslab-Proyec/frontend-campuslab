@@ -24,10 +24,10 @@ export class ReportService {
   constructor(private http: HttpClient) {}
 
   getKpis(range: string): Observable<KpiResponse> {
-    return this.http.get<KpiResponse>(`${this.baseUrl}/report/kpis?range=${range}`);
+    return this.http.get<KpiResponse>(`${this.baseUrl}/report/kpis`, { params: { range } });
   }
 
   getTopResources(range: string): Observable<TopResourceDto[]> {
-    return this.http.get<TopResourceDto[]>(`${this.baseUrl}/report/top-resources?range=${range}`);
+    return this.http.get<TopResourceDto[]>(`${this.baseUrl}/report/top-resources`, { params: { range } });
   }
 }

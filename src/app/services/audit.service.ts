@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -22,11 +22,9 @@ export class AuditService {
   constructor(private http: HttpClient) {}
 
   getEvents(bookingId?: string, actorId?: string): Observable<AuditEvent[]> {
-    let url = `${this.baseUrl}/audit/events`;
-    const params: string[] = [];
-    if (bookingId) params.push(`bookingId=${bookingId}`);
-    if (actorId) params.push(`actorId=${actorId}`);
-    if (params.length) url += `?${params.join('&')}`;
-    return this.http.get<AuditEvent[]>(url);
+    let params = new HttpParams();
+    if (bookingId) params = params.set('bookingId', bookingId);
+    if (actorId) params = params.set('actorId', actorId);
+    return this.http.get<AuditEvent[]>(`${this.baseUrl}/audit/events`, { params });
   }
 }

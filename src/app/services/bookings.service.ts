@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -21,13 +21,11 @@ export class BookingsService {
   constructor(private http: HttpClient) {}
 
   getAll(status?: string, from?: string, to?: string): Observable<Booking[]> {
-    let url = `${this.baseUrl}/bookings`;
-    const params: string[] = [];
-    if (status) params.push(`status=${status}`);
-    if (from) params.push(`from=${from}`);
-    if (to) params.push(`to=${to}`);
-    if (params.length) url += `?${params.join('&')}`;
-    return this.http.get<Booking[]>(url);
+    let params = new HttpParams();
+    if (status) params = params.set('status', status);
+    if (from) params = params.set('from', from);
+    if (to) params = params.set('to', to);
+    return this.http.get<Booking[]>(`${this.baseUrl}/bookings`, { params });
   }
 
   getById(id: number): Observable<Booking> {

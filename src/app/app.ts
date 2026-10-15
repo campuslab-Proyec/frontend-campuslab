@@ -3,6 +3,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 import { MsalBroadcastService, MsalService } from '@azure/msal-angular';
 import { AuthenticationResult, EventMessage, EventType } from '@azure/msal-browser';
 import { filter } from 'rxjs/operators';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -51,8 +52,9 @@ export class App implements OnInit {
     }
 
     login(): void {
+        // Se pide directamente el scope del BFF para que el interceptor obtenga el token sin otro consentimiento
         this.msalService.loginRedirect({
-            scopes: ['user.read']
+            scopes: environment.apiConfig.scopes
         });
     }
 
