@@ -1,8 +1,10 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { MsalBroadcastService, MsalService } from '@azure/msal-angular';
-import { EMPTY } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { App } from './app';
+import { UserService } from './services/user.service';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -23,6 +25,7 @@ describe('App', () => {
         provideRouter([]),
         { provide: MsalService, useValue: msalServiceStub },
         { provide: MsalBroadcastService, useValue: { msalSubject$: EMPTY } },
+        { provide: UserService, useValue: { user: signal(null), isAdmin: signal(false), load: () => of(null) } },
       ],
     }).compileComponents();
   });

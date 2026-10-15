@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogService, Laboratory, Resource } from '../services/catalog.service';
+import { UserService } from '../services/user.service';
 
 @Component({
     selector: 'app-catalog',
@@ -19,7 +20,7 @@ export class CatalogComponent implements OnInit {
     labForm: Laboratory = { name: '', code: '', location: '', capacity: 0, description: '' };
     resourceForm: Resource = { name: '', code: '', category: '', stock: 0, description: '' };
 
-    constructor(private catalogService: CatalogService) {}
+    constructor(private catalogService: CatalogService, protected userService: UserService) {}
 
     ngOnInit(): void {
         this.loadData();

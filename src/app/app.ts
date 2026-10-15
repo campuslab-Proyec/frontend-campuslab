@@ -4,6 +4,7 @@ import { MsalBroadcastService, MsalService } from '@azure/msal-angular';
 import { AuthenticationResult, EventMessage, EventType } from '@azure/msal-browser';
 import { filter } from 'rxjs/operators';
 import { environment } from '../environments/environment';
+import { UserService } from './services/user.service';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,7 @@ export class App implements OnInit {
 
     private msalService = inject(MsalService);
     private msalBroadcastService = inject(MsalBroadcastService);
+    protected userService = inject(UserService);
 
     isLoggedIn = false;
 
@@ -46,6 +48,9 @@ export class App implements OnInit {
                 this.msalService.instance.setActiveAccount(this.msalService.instance.getAllAccounts()[0]);
             }
             this.isLoggedIn = !!this.msalService.instance.getActiveAccount();
+            if (this.isLoggedIn) {
+                this.userService.load().subscribe();
+            }
         } catch {
             this.isLoggedIn = false;
         }

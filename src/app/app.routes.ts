@@ -4,6 +4,7 @@ import { Bookings } from './bookings/bookings';
 import { CatalogComponent } from './catalog/catalog.component';
 import { Audit } from './audit/audit';
 import { Report } from './report/report';
+import { roleGuard } from './role.guard';
 
 export const routes: Routes = [
     { 
@@ -16,15 +17,17 @@ export const routes: Routes = [
         component: Bookings, 
         canActivate: [MsalGuard]
     },
-    { 
-        path: 'audit', 
-        component: Audit, 
-        canActivate: [MsalGuard]
+    {
+        path: 'audit',
+        component: Audit,
+        canActivate: [MsalGuard, roleGuard],
+        data: { role: 'Admin' }
     },
-    { 
-        path: 'report', 
-        component: Report, 
-        canActivate: [MsalGuard]
+    {
+        path: 'report',
+        component: Report,
+        canActivate: [MsalGuard, roleGuard],
+        data: { role: 'Admin' }
     },
     { 
         path: '', 

@@ -7,12 +7,19 @@
         <nav style="display: flex; gap: 1.5rem;">
             <a routerLink="/catalog" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Catálogo</a>
             <a routerLink="/bookings" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Reservas</a>
-            <a routerLink="/audit" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Auditoría</a>
-            <a routerLink="/report" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Reportes</a>
+            @if (userService.isAdmin()) {
+                <a routerLink="/audit" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Auditoría</a>
+                <a routerLink="/report" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Reportes</a>
+            }
         </nav>
     }
 
-    <div>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        @if (userService.user(); as user) {
+            <span style="font-size: 0.9rem; color: #cbd5e1;">
+                {{ user.name }} · {{ user.roles.length ? user.roles.join(', ') : 'Sin rol' }}
+            </span>
+        }
         @if (!isLoggedIn) {
             <button (click)="login()" style="padding: 0.5rem 1rem; background-color: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
                 Iniciar Sesión con Microsoft

@@ -9,7 +9,7 @@
 
 <!-- Vista Laboratorios -->
 <div *ngIf="activeTab === 'labs'" class="section-content">
-    <form (ngSubmit)="onSubmitLab()" class="catalog-form">
+    <form *ngIf="userService.isAdmin()" (ngSubmit)="onSubmitLab()" class="catalog-form">
         <h3>Registrar Laboratorio</h3>
         <div class="form-group">
             <input [(ngModel)]="labForm.code" name="code" placeholder="Código" required />
@@ -32,7 +32,7 @@
 
 <!-- Vista Recursos -->
 <div *ngIf="activeTab === 'resources'" class="section-content">
-    <form (ngSubmit)="onSubmitResource()" class="catalog-form">
+    <form *ngIf="userService.isAdmin()" (ngSubmit)="onSubmitResource()" class="catalog-form">
     <h3>Registrar Recurso</h3>
     <div class="form-group">
         <input [(ngModel)]="resourceForm.code" name="code" placeholder="Código" required />

@@ -55,12 +55,16 @@
       <td>{{ item.to | date:'short' }}</td>
       <td><span class="status-badge" [class]="item.status?.toLowerCase()">{{ item.status }}</span></td>
       <td>
+        @if (userService.canManageBookings()) {
         <select (change)="changeStatus(item, $any($event.target).value)">
           <option value="" disabled selected>Seleccionar...</option>
           @for (status of statusOptions; track status) {
           <option [value]="status">{{ status }}</option>
           }
         </select>
+        } @else {
+        <span style="color: #94a3b8;">Solo Admin/Docente</span>
+        }
       </td>
     </tr>
     }

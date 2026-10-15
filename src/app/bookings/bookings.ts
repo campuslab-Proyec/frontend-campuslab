@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BookingsService, Booking } from '../services/bookings.service';
+import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-bookings',
@@ -12,6 +13,7 @@ import { BookingsService, Booking } from '../services/bookings.service';
 })
 export class Bookings implements OnInit {
   private bookingsService = inject(BookingsService);
+  protected userService = inject(UserService);
 
   bookings = signal<Booking[]>([]);
   loading = signal<boolean>(true);
