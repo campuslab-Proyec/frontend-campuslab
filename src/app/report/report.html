@@ -7,7 +7,7 @@
 
   <div class="filter-bar">
     <label for="rangeFilter">Rango:</label>
-    <select id="rangeFilter" [(ngModel)]="range" (change)="onRangeChange()">
+    <select id="rangeFilter" [(ngModel)]="range" (ngModelChange)="onRangeChange()">
       @for (option of rangeOptions; track option.value) {
       <option [value]="option.value">{{ option.label }}</option>
       }

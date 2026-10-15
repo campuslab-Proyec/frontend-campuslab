@@ -44,8 +44,14 @@ export class App implements OnInit {
     checkLoginStatus(): void {
         try {
             const activeAccount = this.msalService.instance.getActiveAccount();
-            if (!activeAccount && this.msalService.instance.getAllAccounts().length > 0) {
-                this.msalService.instance.setActiveAccount(this.msalService.instance.getAllAccounts()[0]);
+            if (!activeAccount) {
+                // Solo sirven cuentas del tenant de la app: otras (p. ej. una cuenta personal) no obtienen token del BFF
+                const tenantAccount = this.msalService.instance
+                    .getAllAccounts()
+                    .find((account) => account.tenantId === environment.azure.tenantId);
+                if (tenantAccount) {
+                    this.msalService.instance.setActiveAccount(tenantAccount);
+                }
             }
             this.isLoggedIn = !!this.msalService.instance.getActiveAccount();
             if (this.isLoggedIn) {
@@ -59,7 +65,9 @@ export class App implements OnInit {
     login(): void {
         // Se pide directamente el scope del BFF para que el interceptor obtenga el token sin otro consentimiento
         this.msalService.loginRedirect({
-            scopes: environment.apiConfig.scopes
+            scopes: environment.apiConfig.scopes,
+            // Deja elegir cuenta en vez de reutilizar en silencio la última sesión de Microsoft
+            prompt: 'select_account'
         });
     }
 

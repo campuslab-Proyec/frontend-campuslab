@@ -70,7 +70,11 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(async () => {
       const msal = inject(MSAL_INSTANCE) as IPublicClientApplication;
       await msal.initialize();
-      await msal.handleRedirectPromise();
+      const result = await msal.handleRedirectPromise();
+      // La cuenta que acaba de iniciar sesión pasa a ser la activa (si no, se usaría una vieja de la caché)
+      if (result?.account) {
+        msal.setActiveAccount(result.account);
+      }
     }),
     MsalService,
     MsalGuard,

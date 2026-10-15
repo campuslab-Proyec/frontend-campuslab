@@ -44,7 +44,7 @@ export class Bookings implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err?.message ?? 'Error al conectar con la API');
+        this.error.set(this.errorMessage(err, 'Error al conectar con la API'));
         this.loading.set(false);
       },
     });
@@ -66,7 +66,7 @@ export class Bookings implements OnInit {
         this.newBooking = { resourceId: '', studentId: '', from: '', to: '' };
         this.loadBookings();
       },
-      error: (err) => this.error.set(err?.message ?? 'No se pudo crear la reserva.'),
+      error: (err) => this.error.set(this.errorMessage(err, 'No se pudo crear la reserva.')),
     });
   }
 
@@ -74,11 +74,16 @@ export class Bookings implements OnInit {
     if (!booking.id) return;
     this.bookingsService.updateStatus(booking.id, newStatus).subscribe({
       next: () => this.loadBookings(),
-      error: (err) => this.error.set(err?.message ?? 'No se pudo actualizar el estado.'),
+      error: (err) => this.error.set(this.errorMessage(err, 'No se pudo actualizar el estado.')),
     });
   }
 
   onFilterChange(): void {
     this.loadBookings();
+  }
+
+  /** Prioriza el mensaje del backend ({"error": ...}) sobre el genérico "Http failure response...". */
+  private errorMessage(err: any, fallback: string): string {
+    return err?.error?.error ?? err?.error?.detail ?? err?.message ?? fallback;
   }
 }

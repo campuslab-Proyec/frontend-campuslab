@@ -7,7 +7,7 @@
 
   <div class="filter-bar">
     <label for="statusFilter">Filtrar por estado:</label>
-    <select id="statusFilter" [(ngModel)]="filterStatus" (change)="onFilterChange()">
+    <select id="statusFilter" [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
       <option value="">Todos</option>
       @for (status of statusOptions; track status) {
       <option [value]="status">{{ status }}</option>

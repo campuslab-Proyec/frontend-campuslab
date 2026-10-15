@@ -4,34 +4,13 @@ import { Bookings } from './bookings/bookings';
 import { CatalogComponent } from './catalog/catalog.component';
 import { Audit } from './audit/audit';
 import { Report } from './report/report';
-import { roleGuard } from './role.guard';
+import { Alerts } from './alerts/alerts';
 
 export const routes: Routes = [
-    { 
-        path: 'catalog', 
-        component: CatalogComponent, 
-        canActivate: [MsalGuard]
-    },
-    { 
-        path: 'bookings', 
-        component: Bookings, 
-        canActivate: [MsalGuard]
-    },
-    {
-        path: 'audit',
-        component: Audit,
-        canActivate: [MsalGuard, roleGuard],
-        data: { role: 'Admin' }
-    },
-    {
-        path: 'report',
-        component: Report,
-        canActivate: [MsalGuard, roleGuard],
-        data: { role: 'Admin' }
-    },
-    { 
-        path: '', 
-        redirectTo: 'catalog', 
-        pathMatch: 'full' 
-    }
+    { path: 'catalog', component: CatalogComponent, canActivate: [MsalGuard] },
+    { path: 'bookings', component: Bookings, canActivate: [MsalGuard] },
+    { path: 'audit', component: Audit, canActivate: [MsalGuard] },
+    { path: 'report', component: Report, canActivate: [MsalGuard] },
+    { path: 'alerts', component: Alerts, canActivate: [MsalGuard] },
+    { path: '', redirectTo: 'catalog', pathMatch: 'full' }
 ];
