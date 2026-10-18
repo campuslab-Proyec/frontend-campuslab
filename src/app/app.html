@@ -1,46 +1,134 @@
-<header style="padding: 1rem 2rem; background-color: #1e293b; color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155;">
-    <div>
-        <h1 style="margin: 0; font-size: 1.5rem;">CampusLab - Sistema de Gestión</h1>
-    </div>
+@if (!isLoggedIn) {
+  <!-- ================= PÁGINA DE BIENVENIDA (sin sesión) ================= -->
+  <div class="landing">
+    <nav class="landing-nav">
+      <div class="brand">
+        <div class="brand-logo"><i class="bi bi-cpu"></i></div>
+        <div>
+          <div class="brand-name">CampusLab</div>
+          <div class="brand-sub">Duoc UC</div>
+        </div>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <button class="btn btn-icon landing-theme" (click)="themeService.toggle()" aria-label="Cambiar tema">
+          <i class="bi" [class.bi-moon-stars]="themeService.theme() === 'light'" [class.bi-sun]="themeService.theme() === 'dark'"></i>
+        </button>
+        <button class="btn btn-light" (click)="login()"><i class="bi bi-microsoft"></i> Iniciar sesión</button>
+      </div>
+    </nav>
 
-    @if (isLoggedIn) {
-        <nav style="display: flex; gap: 1.5rem;">
-            <a routerLink="/catalog" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Catálogo</a>
-            <a routerLink="/bookings" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Reservas</a>
-            @if (userService.isAdmin()) {
-                <a routerLink="/audit" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Auditoría</a>
-                <a routerLink="/report" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Reportes</a>
-                <a routerLink="/alerts" style="color: #38bdf8; text-decoration: none; font-weight: 500;">Alertas</a>
-            }
-        </nav>
-    }
+    <section class="hero">
+      <div class="hero-text fade-up">
+        <span class="hero-eyebrow"><span class="pulse-dot"></span> Plataforma de laboratorios académicos</span>
+        <h1>Reserva laboratorios y equipos <span class="grad">sin papeleo</span></h1>
+        <p>Solicita equipos, sigue el estado de tu reserva en tiempo real y recibe notificaciones en cada paso. Docentes y técnicos gestionan aprobaciones, preparación y devoluciones desde un solo lugar.</p>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-primary btn-lg-x" (click)="login()"><i class="bi bi-microsoft"></i> Entrar con cuenta institucional</button>
+        </div>
+        <div class="hero-note"><i class="bi bi-shield-lock"></i> Autenticación con Microsoft Entra ID</div>
+      </div>
 
-    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div class="hero-visual fade-up" style="animation-delay: .1s">
+        <div class="mock-card">
+          <div class="mock-head"><span></span><span></span><span></span></div>
+          <div class="mock-row"><i class="bi bi-hourglass-split" style="color:#f59e0b"></i><div><b>Osciloscopio Digital</b><small>Solicitada · hoy 10:00</small></div></div>
+          <div class="mock-row"><i class="bi bi-check2-circle" style="color:#0ea5e9"></i><div><b>Laboratorio Redes &amp; Cloud</b><small>Aprobada · mañana 14:00</small></div></div>
+          <div class="mock-row"><i class="bi bi-play-circle" style="color:#6366f1"></i><div><b>Kit Arduino Uno R3</b><small>En uso · hasta 18:00</small></div></div>
+          <div class="mock-row"><i class="bi bi-box-arrow-in-left" style="color:#22c55e"></i><div><b>Fuente DC</b><small>Devuelta · ayer</small></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature"><div class="stat-icon tone-primary"><i class="bi bi-grid-3x3-gap"></i></div><h3>Catálogo en línea</h3><p>Laboratorios y equipos con stock y disponibilidad actualizados.</p></div>
+      <div class="feature"><div class="stat-icon tone-success"><i class="bi bi-calendar-week"></i></div><h3>Calendario semanal</h3><p>Visualiza qué horarios están ocupados antes de reservar.</p></div>
+      <div class="feature"><div class="stat-icon tone-violet"><i class="bi bi-bell"></i></div><h3>Notificaciones</h3><p>Cada cambio de estado se publica en RabbitMQ y se notifica.</p></div>
+      <div class="feature"><div class="stat-icon tone-warning"><i class="bi bi-graph-up-arrow"></i></div><h3>Reportes y auditoría</h3><p>KPIs operacionales y trazabilidad completa de cada acción.</p></div>
+    </section>
+
+    <section class="roles">
+      <h2>Un espacio para cada rol</h2>
+      <div class="grid grid-3">
+        <div class="role-card"><i class="bi bi-mortarboard"></i><h4>Estudiante</h4><p>Reserva equipos y sigue el estado de sus solicitudes.</p></div>
+        <div class="role-card"><i class="bi bi-person-workspace"></i><h4>Docente</h4><p>Aprueba, prepara y registra entregas y devoluciones.</p></div>
+        <div class="role-card"><i class="bi bi-gear-wide-connected"></i><h4>Administrador</h4><p>Gestiona el catálogo, la mensajería, reportes y auditoría.</p></div>
+      </div>
+    </section>
+
+    <footer class="landing-footer">© {{ year }} CampusLab · Proyecto académico Duoc UC</footer>
+  </div>
+} @else {
+  <!-- ================= APLICACIÓN (con sesión) ================= -->
+  <div class="shell">
+    <aside class="sidebar" [class.open]="sidebarOpen()">
+      <a class="brand" routerLink="/home">
+        <div class="brand-logo"><i class="bi bi-cpu"></i></div>
+        <div>
+          <div class="brand-name">CampusLab</div>
+          <div class="brand-sub">Gestión de laboratorios</div>
+        </div>
+      </a>
+
+      <div class="nav-section">General</div>
+      <a class="nav-link-x" routerLink="/home" routerLinkActive="active"><i class="bi bi-house"></i> Inicio</a>
+      <a class="nav-link-x" routerLink="/catalog" routerLinkActive="active"><i class="bi bi-grid-3x3-gap"></i> Catálogo</a>
+      <a class="nav-link-x" routerLink="/bookings" routerLinkActive="active">
+        <i class="bi bi-calendar-check"></i> Reservas
+        @if (userService.canManageBookings() && pendingCount() > 0) {
+          <span class="nav-badge" title="Reservas por aprobar">{{ pendingCount() }}</span>
+        }
+      </a>
+
+      @if (userService.isAdmin()) {
+        <div class="nav-section">Administración</div>
+        <a class="nav-link-x" routerLink="/report" routerLinkActive="active"><i class="bi bi-bar-chart-line"></i> Reportes</a>
+        <a class="nav-link-x" routerLink="/audit" routerLinkActive="active"><i class="bi bi-shield-check"></i> Auditoría</a>
+
+        <div class="nav-section">Mensajería</div>
+        <a class="nav-link-x" routerLink="/rabbit" routerLinkActive="active"><i class="bi bi-diagram-3"></i> Panel RabbitMQ</a>
+        <a class="nav-link-x" routerLink="/alerts" routerLinkActive="active"><i class="bi bi-broadcast"></i> Alertas y guías</a>
+      }
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center gap-2 mb-1"><span class="pulse-dot"></span> Sistema operativo</div>
+        © {{ year }} CampusLab · Duoc UC
+      </div>
+    </aside>
+    <div class="backdrop" [class.show]="sidebarOpen()" (click)="sidebarOpen.set(false)"></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="btn btn-ghost btn-icon menu-toggle" (click)="sidebarOpen.set(!sidebarOpen())" aria-label="Abrir menú">
+          <i class="bi bi-list"></i>
+        </button>
+        <div class="topbar-title">{{ pageTitle() }}</div>
+        <div class="topbar-spacer"></div>
+
+        <button class="btn btn-ghost btn-icon" (click)="themeService.toggle()"
+                [title]="themeService.theme() === 'dark' ? 'Tema claro' : 'Tema oscuro'" aria-label="Cambiar tema">
+          <i class="bi" [class.bi-moon-stars]="themeService.theme() === 'light'" [class.bi-sun]="themeService.theme() === 'dark'"></i>
+        </button>
+
         @if (userService.user(); as user) {
-            <span style="font-size: 0.9rem; color: #cbd5e1;">
-                {{ user.name }} · {{ user.roles.length ? user.roles.join(', ') : 'Sin rol' }}
-            </span>
+          <div class="user-chip">
+            <div class="avatar">{{ userService.initials() }}</div>
+            <div class="user-meta">
+              <div class="user-name">{{ user.name }}</div>
+              <div class="user-role">{{ userService.primaryRole() }}</div>
+            </div>
+          </div>
         }
-        @if (!isLoggedIn) {
-            <button (click)="login()" style="padding: 0.5rem 1rem; background-color: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                Iniciar Sesión con Microsoft
-            </button>
-        } @else {
-            <button (click)="logout()" style="padding: 0.5rem 1rem; background-color: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Cerrar Sesión
-            </button>
-        }
-    </div>
-</header>
+        <button class="btn btn-ghost btn-icon" (click)="logout()" title="Cerrar sesión" aria-label="Cerrar sesión">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </header>
 
-<main style="padding: 2rem;">
-    @if (!isLoggedIn) {
-        <section style="text-align: center; margin-top: 3rem;">
-            <h2>Bienvenido a CampusLab</h2>
-            <p style="color: #64748b;">Por favor inicia sesión con tu cuenta institucional de Azure AD para acceder al catálogo y reservas.</p>
-        </section>
-    } @else {
-        <!-- Vista de las rutas protegidas -->
+      <main class="content">
         <router-outlet></router-outlet>
-    }
-</main>
+      </main>
+    </div>
+  </div>
+}
+
+<app-toast-container />
+<app-confirm-dialog />

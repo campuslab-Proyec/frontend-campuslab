@@ -1,0 +1,33 @@
+.list-x { list-style: none; margin: 0; padding: 0.4rem 0; }
+.list-x li { display: flex; align-items: center; gap: 0.9rem; padding: 0.7rem 1.25rem; transition: background 0.12s; }
+.list-x li:hover { background: var(--surface-hover); }
+.list-x li.clickable, .list-main { cursor: pointer; }
+.list-x.compact li { padding: 0.55rem 1.25rem; }
+.list-icon { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; }
+.list-main { flex: 1; min-width: 0; }
+.list-title { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-sub { font-size: 0.78rem; color: var(--text-muted); }
+.list-sub::first-letter { text-transform: uppercase; }
+
+.date-tile { width: 46px; text-align: center; border-radius: 10px; background: var(--primary-soft); color: var(--primary); padding: 0.3rem 0; flex-shrink: 0; line-height: 1.1; }
+.date-tile span { display: block; font-size: 0.65rem; text-transform: uppercase; font-weight: 700; }
+.date-tile strong { font-size: 1.15rem; }
+
+.next-card { background: linear-gradient(135deg, #4f46e5, #7c3aed); border: none; color: #fff; }
+.next-card .status-pill { background: rgba(255, 255, 255, 0.2) !important; color: #fff !important; margin-top: 0.8rem; }
+.next-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; font-weight: 600; margin-bottom: 0.6rem; }
+.next-title { font-size: 1.25rem; font-weight: 800; line-height: 1.2; }
+.next-when { opacity: 0.85; font-size: 0.88rem; margin-top: 0.3rem; }
+.next-when::first-letter { text-transform: uppercase; }
+.next-time { font-size: 1.6rem; font-weight: 800; margin-top: 0.4rem; letter-spacing: -0.02em; }
+
+.stacked { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: var(--surface-hover); }
+.stacked span { display: block; height: 100%; transition: width 0.4s; }
+.legend { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; font-size: 0.82rem; color: var(--text-muted); }
+.legend b { color: var(--text); margin-left: 0.2rem; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 0.3rem; }
+
+.quick-links { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.quick-links a { display: flex; align-items: center; gap: 0.55rem; padding: 0.7rem; border: 1px solid var(--border); border-radius: 11px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 0.86rem; transition: all 0.15s; }
+.quick-links a:hover { border-color: var(--primary); background: var(--primary-soft); }
+.quick-links i { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; }

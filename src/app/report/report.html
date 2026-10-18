@@ -1,63 +1,68 @@
-<div style="padding: 20px;">
-  <h2>Panel de Operaciones</h2>
-
-  @if (error()) {
-  <p style="color: red;">Error: {{ error() }}</p>
-  }
-
-  <div class="filter-bar">
-    <label for="rangeFilter">Rango:</label>
-    <select id="rangeFilter" [(ngModel)]="range" (ngModelChange)="onRangeChange()">
-      @for (option of rangeOptions; track option.value) {
-      <option [value]="option.value">{{ option.label }}</option>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Reportes</h1>
+    <p class="page-subtitle">Indicadores operacionales de reservas y uso de recursos (actualizados cada 30 s en el servidor).</p>
+  </div>
+  <div class="page-actions">
+    <div class="segmented">
+      @for (opt of rangeOptions; track opt.value) {
+        <button [class.active]="range() === opt.value" (click)="setRange(opt.value)">{{ opt.label }}</button>
       }
-    </select>
+    </div>
+    <button class="btn btn-ghost btn-icon" (click)="loadReport()" [disabled]="loading()" title="Actualizar"><i class="bi bi-arrow-clockwise"></i></button>
   </div>
-
-  @if (loading()) {
-  <p>Cargando reporte desde la API...</p>
-  } @else {
-  @if (kpis(); as kpi) {
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <span class="kpi-value">{{ kpi.totalBookings }}</span>
-      <span class="kpi-label">Reservas totales</span>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-value">{{ kpi.activeBookings }}</span>
-      <span class="kpi-label">Reservas activas</span>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-value">{{ kpi.completedBookings }}</span>
-      <span class="kpi-label">Reservas completadas</span>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-value">{{ kpi.avgCycleTimeMinutes | number:'1.0-1' }} min</span>
-      <span class="kpi-label">Tiempo de ciclo promedio</span>
-    </div>
-  </div>
-  }
-
-  <h3>Recursos más solicitados</h3>
-  @if (topResources().length === 0) {
-  <p>No hay datos de recursos para este rango.</p>
-  } @else {
-  <table class="resources-table">
-    <thead>
-    <tr>
-      <th>Recurso</th>
-      <th>Total de reservas</th>
-    </tr>
-    </thead>
-    <tbody>
-    @for (resource of topResources(); track resource.resourceId) {
-    <tr>
-      <td>{{ resource.resourceId }}</td>
-      <td>{{ resource.totalBookings }}</td>
-    </tr>
-    }
-    </tbody>
-  </table>
-  }
-  }
 </div>
+
+@if (loading() && !kpis()) {
+  <div class="grid grid-4 mb-4">@for (i of [1, 2, 3, 4]; track i) { <div class="skeleton" style="height: 86px; border-radius: 14px"></div> }</div>
+  <div class="grid grid-2">@for (i of [1, 2]; track i) { <div class="skeleton" style="height: 340px; border-radius: 14px"></div> }</div>
+} @else {
+  @if (kpis(); as k) {
+    <div class="grid grid-4 mb-4">
+      <div class="card-x stat-card fade-up"><div class="stat-icon tone-primary"><i class="bi bi-journal-text"></i></div><div><div class="stat-value">{{ k.totalBookings }}</div><div class="stat-label">Reservas totales</div></div></div>
+      <div class="card-x stat-card fade-up"><div class="stat-icon tone-info"><i class="bi bi-lightning-charge"></i></div><div><div class="stat-value">{{ k.activeBookings }}</div><div class="stat-label">Reservas activas</div></div></div>
+      <div class="card-x stat-card fade-up"><div class="stat-icon tone-success"><i class="bi bi-check2-all"></i></div><div><div class="stat-value">{{ k.completedBookings }}</div><div class="stat-label">Completadas</div></div></div>
+      <div class="card-x stat-card fade-up"><div class="stat-icon tone-violet"><i class="bi bi-stopwatch"></i></div><div><div class="stat-value">{{ k.avgCycleTimeMinutes | number: '1.0-1' }}<small class="fs-6 fw-semibold muted"> min</small></div><div class="stat-label">Tiempo de ciclo promedio</div></div></div>
+    </div>
+  }
+
+  <div class="grid grid-main-side mb-3">
+    <div class="card-x">
+      <div class="card-x-header">
+        <h3 class="card-x-title"><i class="bi bi-graph-up"></i> Reservas creadas</h3>
+        <span class="muted small">{{ range() === 'last24h' ? 'por hora' : 'por día' }}</span>
+      </div>
+      <div class="card-x-body"><app-chart type="line" [data]="trendChart()" [options]="noLegend" [height]="290" /></div>
+    </div>
+    <div class="card-x">
+      <div class="card-x-header">
+        <h3 class="card-x-title"><i class="bi bi-pie-chart"></i> Por estado</h3>
+        <span class="tag tone-danger" title="Porcentaje de reservas canceladas">{{ cancelRate() | number: '1.0-0' }}% canceladas</span>
+      </div>
+      <div class="card-x-body">
+        @if (statusChart().labels?.length) {
+          <app-chart type="doughnut" [data]="statusChart()" [height]="290" />
+        } @else {
+          <div class="empty-state"><i class="bi bi-pie-chart"></i><p>Sin reservas en este rango.</p></div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card-x">
+      <div class="card-x-header"><h3 class="card-x-title"><i class="bi bi-trophy"></i> Recursos más solicitados</h3></div>
+      <div class="card-x-body">
+        @if (topResources().length) {
+          <app-chart type="bar" [data]="topChart()" [options]="horizontalBar" [height]="290" />
+        } @else {
+          <div class="empty-state"><i class="bi bi-bar-chart"></i><p>No hay datos de recursos para este rango.</p></div>
+        }
+      </div>
+    </div>
+    <div class="card-x">
+      <div class="card-x-header"><h3 class="card-x-title"><i class="bi bi-clock-history"></i> Horas de mayor demanda</h3></div>
+      <div class="card-x-body"><app-chart type="bar" [data]="peakChart()" [options]="noLegend" [height]="290" /></div>
+    </div>
+  </div>
+}

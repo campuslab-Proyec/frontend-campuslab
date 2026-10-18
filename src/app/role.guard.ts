@@ -8,5 +8,5 @@ export const roleGuard: CanActivateFn = (route) => {
   const router = inject(Router);
   return inject(UserService)
     .hasRole(route.data['role'])
-    .pipe(map((allowed) => allowed || router.createUrlTree(['/catalog'])));
+    .pipe(map((allowed) => allowed || router.createUrlTree(['/home'])));
 };

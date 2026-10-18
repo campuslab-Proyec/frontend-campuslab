@@ -19,7 +19,7 @@ export interface TopResourceDto {
   providedIn: 'root',
 })
 export class ReportService {
-  private baseUrl = environment.bffUrl; // Apunta a 'http://localhost:8080/api/bff'
+  private baseUrl = environment.bffUrl;
 
   constructor(private http: HttpClient) {}
 

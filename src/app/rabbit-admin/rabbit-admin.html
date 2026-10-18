@@ -1,0 +1,352 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Panel RabbitMQ</h1>
+    <p class="page-subtitle">Administra colas, exchanges y bindings en tiempo real mediante la API REST de <span class="mono">ms-campuslab-notify</span>.</p>
+  </div>
+  <div class="page-actions align-items-center">
+    <span class="live" [class.off]="!online()">
+      @if (online()) { <span class="pulse-dot"></span> En línea } @else { <i class="bi bi-wifi-off"></i> Sin conexión }
+      @if (updatedAt()) { <span class="soft">· {{ updatedAt() | date: 'HH:mm:ss' }}</span> }
+    </span>
+    <div class="form-check form-switch m-0">
+      <input class="form-check-input" type="checkbox" id="auto" [ngModel]="autoRefresh()" (ngModelChange)="autoRefresh.set($event)">
+      <label class="form-check-label small" for="auto">Auto (5 s)</label>
+    </div>
+    <button class="btn btn-ghost btn-icon" (click)="refresh()" [disabled]="loading()" title="Actualizar"><i class="bi bi-arrow-clockwise"></i></button>
+  </div>
+</div>
+
+@if (stats().dead > 0) {
+  <div class="alert-x tone-danger">
+    <i class="bi bi-exclamation-octagon"></i>
+    <div><b>{{ stats().dead }} mensaje(s) en colas DLQ.</b> Son mensajes que los consumidores rechazaron; revísalos o vacía la DLQ.</div>
+  </div>
+}
+
+<div class="grid stats-6 mb-4">
+  <div class="card-x stat-card"><div class="stat-icon tone-primary"><i class="bi bi-inboxes"></i></div><div><div class="stat-value">{{ stats().queues }}</div><div class="stat-label">Colas</div></div></div>
+  <div class="card-x stat-card"><div class="stat-icon tone-info"><i class="bi bi-envelope"></i></div><div><div class="stat-value">{{ stats().messages | number }}</div><div class="stat-label">Mensajes</div></div></div>
+  <div class="card-x stat-card"><div class="stat-icon" [class]="'stat-icon ' + (stats().dead ? 'tone-danger' : 'tone-success')"><i class="bi bi-heartbreak"></i></div><div><div class="stat-value">{{ stats().dead }}</div><div class="stat-label">En DLQ</div></div></div>
+  <div class="card-x stat-card"><div class="stat-icon tone-success"><i class="bi bi-person-gear"></i></div><div><div class="stat-value">{{ stats().consumers }}</div><div class="stat-label">Consumidores</div></div></div>
+  <div class="card-x stat-card"><div class="stat-icon tone-violet"><i class="bi bi-signpost-split"></i></div><div><div class="stat-value">{{ stats().exchanges }}</div><div class="stat-label">Exchanges</div></div></div>
+  <div class="card-x stat-card"><div class="stat-icon tone-warning"><i class="bi bi-link-45deg"></i></div><div><div class="stat-value">{{ stats().bindings }}</div><div class="stat-label">Bindings</div></div></div>
+</div>
+
+<div class="grid grid-main-side align-items-start">
+  <div class="card-x main-card">
+    <div class="tabs-x px-3 mb-0">
+      <button [class.active]="tab() === 'queues'" (click)="setTab('queues')"><i class="bi bi-inboxes"></i> Colas <span class="tab-count">{{ stats().queues }}</span></button>
+      <button [class.active]="tab() === 'exchanges'" (click)="setTab('exchanges')"><i class="bi bi-signpost-split"></i> Exchanges <span class="tab-count">{{ stats().exchanges }}</span></button>
+      <button [class.active]="tab() === 'bindings'" (click)="setTab('bindings')"><i class="bi bi-link-45deg"></i> Bindings <span class="tab-count">{{ stats().bindings }}</span></button>
+      <button [class.active]="tab() === 'publish'" (click)="setTab('publish')"><i class="bi bi-send"></i> Publicar mensaje</button>
+    </div>
+
+    @if (tab() !== 'publish') {
+      <div class="toolbar px-3 pt-3 mb-0">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input class="form-control" placeholder="Filtrar por nombre" [ngModel]="search()" (ngModelChange)="search.set($event)">
+        </div>
+        <div class="form-check form-switch m-0" title="Envía los formularios sin validar en el navegador, para ver la validación del backend (400/409)">
+          <input class="form-check-input" type="checkbox" id="skip" [ngModel]="skipClientValidation()" (ngModelChange)="skipClientValidation.set($event)">
+          <label class="form-check-label small muted" for="skip">Probar validación del backend</label>
+        </div>
+        <div class="flex-grow-1"></div>
+        @if (tab() === 'queues') {
+          <button class="btn btn-primary btn-sm" (click)="showQueueForm.set(!showQueueForm()); submitted.set(false)"><i class="bi bi-plus-lg"></i> Nueva cola</button>
+        } @else if (tab() === 'exchanges') {
+          <button class="btn btn-primary btn-sm" (click)="showExchangeForm.set(!showExchangeForm()); submitted.set(false)"><i class="bi bi-plus-lg"></i> Nuevo exchange</button>
+        } @else {
+          <button class="btn btn-primary btn-sm" (click)="showBindingForm.set(!showBindingForm()); submitted.set(false)"><i class="bi bi-plus-lg"></i> Nuevo binding</button>
+        }
+      </div>
+    }
+
+    <!-- ================= COLAS ================= -->
+    @if (tab() === 'queues') {
+      @if (showQueueForm()) {
+        <form class="inline-form fade-up" (ngSubmit)="createQueue()" novalidate>
+          <div class="inline-form-title"><i class="bi bi-plus-square"></i> <span class="mono">POST /api/admin/queues</span></div>
+          <div class="grid grid-3">
+            <div>
+              <label class="form-label">Nombre *</label>
+              <input class="form-control" name="qname" [(ngModel)]="queueForm.name" placeholder="q.cmd.sms" [class.is-invalid]="submitted() && queueErrors()['name']">
+              @if (submitted() && queueErrors()['name']) { <div class="invalid-msg">{{ queueErrors()['name'] }}</div> }
+            </div>
+            <div>
+              <label class="form-label">Dead-letter exchange</label>
+              <select class="form-select" name="dlx" [(ngModel)]="queueForm.deadLetterExchange">
+                <option value="">— Ninguno —</option>
+                @for (x of exchanges(); track x.name) { <option [value]="x.name">{{ x.name }}</option> }
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Dead-letter routing key</label>
+              <input class="form-control" name="dlrk" [(ngModel)]="queueForm.deadLetterRoutingKey" placeholder="q.cmd.sms.dlq" [class.is-invalid]="submitted() && queueErrors()['deadLetterRoutingKey']">
+              @if (submitted() && queueErrors()['deadLetterRoutingKey']) { <div class="invalid-msg">{{ queueErrors()['deadLetterRoutingKey'] }}</div> }
+            </div>
+            <div>
+              <label class="form-label">TTL de mensajes (ms)</label>
+              <input class="form-control" type="number" name="ttl" [(ngModel)]="queueForm.messageTtl" placeholder="60000" [class.is-invalid]="submitted() && queueErrors()['messageTtl']">
+              @if (submitted() && queueErrors()['messageTtl']) { <div class="invalid-msg">{{ queueErrors()['messageTtl'] }}</div> }
+            </div>
+            <div>
+              <label class="form-label">Largo máximo</label>
+              <input class="form-control" type="number" name="maxlen" [(ngModel)]="queueForm.maxLength" placeholder="1000" [class.is-invalid]="submitted() && queueErrors()['maxLength']">
+              @if (submitted() && queueErrors()['maxLength']) { <div class="invalid-msg">{{ queueErrors()['maxLength'] }}</div> }
+            </div>
+            <div class="d-flex flex-column justify-content-end gap-1 pb-1">
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="durable" name="durable" [(ngModel)]="queueForm.durable"><label class="form-check-label small" for="durable">Durable</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="autodel" name="autodel" [(ngModel)]="queueForm.autoDelete"><label class="form-check-label small" for="autodel">Auto-delete</label></div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="showQueueForm.set(false)">Cancelar</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()"><i class="bi bi-check-lg"></i> Crear cola</button>
+          </div>
+        </form>
+      }
+
+      @if (loading()) {
+        <div class="p-3">@for (i of [1, 2, 3, 4]; track i) { <div class="skeleton skeleton-row"></div> }</div>
+      } @else if (filteredQueues().length === 0) {
+        <div class="empty-state"><i class="bi bi-inbox"></i><h4>Sin colas</h4></div>
+      } @else {
+        <div class="table-wrap">
+          <table class="table-x">
+            <thead><tr><th>Cola</th><th class="text-end">Listos</th><th class="text-end">Sin ACK</th><th class="text-end">Consumidores</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+              @for (q of filteredQueues(); track q.name) {
+                <tr [class.dlq-row]="isDlq(q) && q.messages > 0">
+                  <td>
+                    <div class="mono fw-semibold">{{ q.name }}</div>
+                    <div class="d-flex gap-1 flex-wrap mt-1">
+                      @if (q.managed) { <span class="tag tone-primary" title="Declarada por la aplicación"><i class="bi bi-lock"></i> Propia</span> }
+                      @if (isDlq(q)) { <span class="tag tone-danger">DLQ</span> }
+                      @if (q.deadLetterExchange) { <span class="tag tone-neutral" title="Dead-letter exchange">DLX: {{ q.deadLetterExchange }}</span> }
+                      @if (q.messageTtl) { <span class="tag tone-warning">TTL {{ q.messageTtl / 1000 | number: '1.0-0' }} s</span> }
+                      @if (!q.durable) { <span class="tag tone-neutral">Transitoria</span> }
+                    </div>
+                  </td>
+                  <td class="text-end"><span class="count" [class.hot]="q.messagesReady > 0" [class.dead]="isDlq(q) && q.messagesReady > 0">{{ q.messagesReady }}</span></td>
+                  <td class="text-end">{{ q.messagesUnacknowledged }}</td>
+                  <td class="text-end">
+                    @if (q.consumers > 0) { <span class="tag tone-success"><i class="bi bi-circle-fill" style="font-size: .45rem"></i> {{ q.consumers }}</span> } @else { <span class="soft">0</span> }
+                  </td>
+                  <td class="text-end">
+                    <div class="d-inline-flex gap-1">
+                      <button class="btn btn-soft-warning btn-sm btn-icon" [disabled]="q.messages === 0 || busy()" (click)="purgeQueue(q)" title="Vaciar cola"><i class="bi bi-eraser"></i></button>
+                      <button class="btn btn-soft-danger btn-sm btn-icon" [disabled]="q.managed || busy()" (click)="deleteQueue(q)"
+                              [title]="q.managed ? 'Protegida: la declara la aplicación' : 'Eliminar cola'"><i class="bi bi-trash"></i></button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- ================= EXCHANGES ================= -->
+    @if (tab() === 'exchanges') {
+      @if (showExchangeForm()) {
+        <form class="inline-form fade-up" (ngSubmit)="createExchange()" novalidate>
+          <div class="inline-form-title"><i class="bi bi-plus-square"></i> <span class="mono">POST /api/admin/exchanges</span></div>
+          <div class="grid grid-3">
+            <div>
+              <label class="form-label">Nombre *</label>
+              <input class="form-control" name="xname" [(ngModel)]="exchangeForm.name" placeholder="notify.topic" [class.is-invalid]="submitted() && exchangeErrors()['name']">
+              @if (submitted() && exchangeErrors()['name']) { <div class="invalid-msg">{{ exchangeErrors()['name'] }}</div> }
+            </div>
+            <div>
+              <label class="form-label">Tipo *</label>
+              <select class="form-select" name="xtype" [(ngModel)]="exchangeForm.type">
+                <option value="direct">direct · routing key exacta</option>
+                <option value="topic">topic · patrones * y #</option>
+                <option value="fanout">fanout · a todas las colas</option>
+                <option value="headers">headers · por cabeceras</option>
+              </select>
+            </div>
+            <div class="d-flex flex-column justify-content-end gap-1 pb-1">
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="xdurable" name="xdurable" [(ngModel)]="exchangeForm.durable"><label class="form-check-label small" for="xdurable">Durable</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" id="xautodel" name="xautodel" [(ngModel)]="exchangeForm.autoDelete"><label class="form-check-label small" for="xautodel">Auto-delete</label></div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="showExchangeForm.set(false)">Cancelar</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()"><i class="bi bi-check-lg"></i> Crear exchange</button>
+          </div>
+        </form>
+      }
+
+      @if (filteredExchanges().length === 0) {
+        <div class="empty-state"><i class="bi bi-signpost"></i><h4>Sin exchanges</h4></div>
+      } @else {
+        <div class="table-wrap">
+          <table class="table-x">
+            <thead><tr><th>Exchange</th><th>Tipo</th><th>Propiedades</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+              @for (x of filteredExchanges(); track x.name) {
+                <tr>
+                  <td>
+                    <span class="mono fw-semibold">{{ x.name }}</span>
+                    @if (x.managed) { <span class="tag tone-primary ms-2"><i class="bi bi-lock"></i> Propio</span> }
+                  </td>
+                  <td><span class="tag tone-violet">{{ x.type }}</span></td>
+                  <td class="small muted">{{ x.durable ? 'Durable' : 'Transitorio' }}{{ x.autoDelete ? ' · auto-delete' : '' }}</td>
+                  <td class="text-end">
+                    <button class="btn btn-soft-danger btn-sm btn-icon" [disabled]="x.managed || busy()" (click)="deleteExchange(x)"
+                            [title]="x.managed ? 'Protegido: lo declara la aplicación' : 'Eliminar exchange'"><i class="bi bi-trash"></i></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- ================= BINDINGS ================= -->
+    @if (tab() === 'bindings') {
+      @if (showBindingForm()) {
+        <form class="inline-form fade-up" (ngSubmit)="createBinding()" novalidate>
+          <div class="inline-form-title"><i class="bi bi-plus-square"></i> <span class="mono">POST /api/admin/bindings</span></div>
+          <div class="grid grid-3">
+            <div>
+              <label class="form-label">Exchange *</label>
+              <select class="form-select" name="bex" [(ngModel)]="bindingForm.exchange" [class.is-invalid]="submitted() && bindingErrors()['exchange']">
+                <option value="">Selecciona…</option>
+                @for (x of exchanges(); track x.name) { <option [value]="x.name">{{ x.name }} ({{ x.type }})</option> }
+              </select>
+              @if (submitted() && bindingErrors()['exchange']) { <div class="invalid-msg">{{ bindingErrors()['exchange'] }}</div> }
+            </div>
+            <div>
+              <label class="form-label">Cola *</label>
+              <select class="form-select" name="bq" [(ngModel)]="bindingForm.queue" [class.is-invalid]="submitted() && bindingErrors()['queue']">
+                <option value="">Selecciona…</option>
+                @for (q of queues(); track q.name) { <option [value]="q.name">{{ q.name }}</option> }
+              </select>
+              @if (submitted() && bindingErrors()['queue']) { <div class="invalid-msg">{{ bindingErrors()['queue'] }}</div> }
+            </div>
+            <div>
+              <label class="form-label">Routing key</label>
+              <input class="form-control" name="brk" [(ngModel)]="bindingForm.routingKey" placeholder="sms.send · alerta.#" [class.is-invalid]="submitted() && bindingErrors()['routingKey']">
+              @if (submitted() && bindingErrors()['routingKey']) { <div class="invalid-msg">{{ bindingErrors()['routingKey'] }}</div> }
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="showBindingForm.set(false)">Cancelar</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()"><i class="bi bi-check-lg"></i> Crear binding</button>
+          </div>
+        </form>
+      }
+
+      @if (filteredBindings().length === 0) {
+        <div class="empty-state"><i class="bi bi-link"></i><h4>Sin bindings</h4></div>
+      } @else {
+        <div class="table-wrap">
+          <table class="table-x">
+            <thead><tr><th>Exchange</th><th></th><th>Cola</th><th>Routing key</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+              @for (b of filteredBindings(); track b.exchange + b.queue + b.routingKey) {
+                <tr>
+                  <td class="mono fw-semibold">{{ b.exchange }}</td>
+                  <td class="soft"><i class="bi bi-arrow-right"></i></td>
+                  <td class="mono">{{ b.queue }}</td>
+                  <td>@if (b.routingKey) { <span class="tag tone-neutral mono">{{ b.routingKey }}</span> } @else { <span class="soft">—</span> }</td>
+                  <td class="text-end">
+                    <button class="btn btn-soft-danger btn-sm btn-icon" [disabled]="isManagedBinding(b) || busy()" (click)="deleteBinding(b)"
+                            [title]="isManagedBinding(b) ? 'Protegido: lo usa la aplicación' : 'Eliminar binding'"><i class="bi bi-trash"></i></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- ================= PUBLICAR ================= -->
+    @if (tab() === 'publish') {
+      <div class="p-3">
+        <div class="form-label mb-2">Plantillas</div>
+        <div class="templates mb-3">
+          @for (t of templates; track t.label) {
+            <button type="button" class="template" (click)="useTemplate(t)"><i class="bi" [class]="'bi ' + t.icon"></i> {{ t.label }}</button>
+          }
+        </div>
+        <form (ngSubmit)="publish()" novalidate>
+          <div class="grid grid-2 mb-3">
+            <div>
+              <label class="form-label">Exchange *</label>
+              <select class="form-select" name="pex" [(ngModel)]="publishForm.exchange" [class.is-invalid]="submitted() && !publishForm.exchange">
+                <option value="">Selecciona…</option>
+                @for (x of exchanges(); track x.name) { <option [value]="x.name">{{ x.name }} ({{ x.type }})</option> }
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Routing key</label>
+              <input class="form-control mono" name="prk" [(ngModel)]="publishForm.routingKey" placeholder="email.send">
+            </div>
+          </div>
+          <label class="form-label">Mensaje (JSON) *</label>
+          <textarea class="form-control mono payload" rows="9" name="payload" [(ngModel)]="publishForm.payload" spellcheck="false"
+                    [class.is-invalid]="submitted() && payloadError()"></textarea>
+          @if (payloadError()) { <div class="invalid-msg">{{ payloadError() }}</div> }
+          <div class="hint"><i class="bi bi-lightbulb"></i> {{ publishHint() }}</div>
+          <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-primary" [disabled]="busy()"><i class="bi bi-send"></i> Publicar</button>
+          </div>
+        </form>
+      </div>
+    }
+
+    @if (updatedAt()) {
+      <div class="card-x-footer">Actualizado a las {{ updatedAt() | date: 'HH:mm:ss' }}{{ autoRefresh() ? ' · se actualiza cada 5 s' : '' }}</div>
+    }
+  </div>
+
+  <!-- ================= ÚLTIMA LLAMADA A LA API ================= -->
+  <div class="d-flex flex-column gap-3 side-col">
+    <div class="card-x">
+      <div class="card-x-header"><h3 class="card-x-title"><i class="bi bi-terminal"></i> Última llamada a la API</h3></div>
+      <div class="card-x-body">
+        @if (lastCall(); as c) {
+          <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+            <span class="method" [class]="'method m-' + c.method.toLowerCase()">{{ c.method }}</span>
+            <span class="mono small">/api{{ c.path }}</span>
+          </div>
+          <div class="mb-2">
+            <span class="tag" [class.tone-success]="c.ok" [class.tone-danger]="!c.ok">HTTP {{ c.status }}</span>
+            <span class="soft small ms-2">{{ c.at | date: 'HH:mm:ss' }}</span>
+          </div>
+          @if (c.body) {
+            <div class="form-label mt-3">Request</div>
+            <pre class="code-x">{{ c.body | json }}</pre>
+          }
+          <div class="form-label mt-3">Respuesta</div>
+          <pre class="code-x" [class.code-error]="!c.ok">{{ c.response | json }}</pre>
+        } @else {
+          <p class="muted small mb-0">Crea, elimina o publica algo y aquí verás el request REST, el código HTTP y la respuesta (incluidos los errores de validación 400, 404 y 409).</p>
+        }
+      </div>
+    </div>
+
+    <div class="card-x">
+      <div class="card-x-header"><h3 class="card-x-title"><i class="bi bi-diagram-3"></i> Flujo de mensajes</h3></div>
+      <div class="card-x-body flow">
+        <div class="flow-step"><span class="tone-primary"><i class="bi bi-box-arrow-up-right"></i></span> Productor publica en <b class="mono">cmd.direct</b></div>
+        <div class="flow-arrow"><i class="bi bi-arrow-down"></i></div>
+        <div class="flow-step"><span class="tone-violet"><i class="bi bi-signpost-split"></i></span> El exchange enruta por <b>routing key</b></div>
+        <div class="flow-arrow"><i class="bi bi-arrow-down"></i></div>
+        <div class="flow-step"><span class="tone-info"><i class="bi bi-inboxes"></i></span> Cola de trabajo (<span class="mono">q.cmd.*</span>)</div>
+        <div class="flow-arrow"><i class="bi bi-arrow-down"></i></div>
+        <div class="flow-split">
+          <div class="flow-step ok"><span class="tone-success"><i class="bi bi-check-lg"></i></span> basicAck</div>
+          <div class="flow-step ko"><span class="tone-danger"><i class="bi bi-x-lg"></i></span> basicNack → <b class="mono">DLQ</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

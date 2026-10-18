@@ -24,7 +24,20 @@ export class UserService {
   readonly user = signal<CurrentUser | null>(null);
   readonly roles = computed(() => this.user()?.roles ?? []);
   readonly isAdmin = computed(() => this.roles().includes('Admin'));
-  readonly canManageBookings = computed(() => this.isAdmin() || this.roles().includes('Docente'));
+  readonly isDocente = computed(() => this.roles().includes('Docente'));
+  readonly isStudent = computed(() => !this.isAdmin() && !this.isDocente());
+  readonly canManageBookings = computed(() => this.isAdmin() || this.isDocente());
+  /** Rol principal para mostrar en la interfaz. */
+  readonly primaryRole = computed(() => (this.isAdmin() ? 'Administrador' : this.isDocente() ? 'Docente' : 'Estudiante'));
+  readonly firstName = computed(() => (this.user()?.name ?? '').split(' ')[0]);
+  readonly initials = computed(() =>
+    (this.user()?.name ?? '?')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0].toUpperCase())
+      .join(''),
+  );
 
   load(): Observable<CurrentUser | null> {
     this.request$ ??= this.http.get<CurrentUser>(`${environment.bffUrl}/me`).pipe(

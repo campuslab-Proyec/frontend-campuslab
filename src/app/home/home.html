@@ -1,0 +1,206 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ greeting }}{{ userService.firstName() ? ', ' + userService.firstName() : '' }} 👋</h1>
+    <p class="page-subtitle">
+      @if (userService.canManageBookings()) {
+        Este es el estado de los laboratorios hoy, {{ todayDate | date: "EEEE d 'de' MMMM" }}.
+      } @else {
+        Aquí tienes un resumen de tus reservas.
+      }
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" routerLink="/catalog"><i class="bi bi-grid-3x3-gap"></i> Ver catálogo</a>
+    <a class="btn btn-primary" routerLink="/bookings" [queryParams]="{ new: 1 }"><i class="bi bi-plus-lg"></i> Nueva reserva</a>
+  </div>
+</div>
+
+<!-- KPIs -->
+@if (loading()) {
+  <div class="grid grid-4 mb-4">
+    @for (i of [1, 2, 3, 4]; track i) { <div class="skeleton" style="height: 86px; border-radius: 14px"></div> }
+  </div>
+} @else {
+  <div class="grid grid-4 mb-4">
+    <div class="card-x stat-card fade-up">
+      <div class="stat-icon tone-primary"><i class="bi bi-journal-text"></i></div>
+      <div><div class="stat-value">{{ stats().total }}</div><div class="stat-label">{{ userService.canManageBookings() ? 'Reservas totales' : 'Mis reservas' }}</div></div>
+    </div>
+    <div class="card-x stat-card fade-up" style="animation-delay: .05s">
+      <div class="stat-icon tone-warning"><i class="bi bi-hourglass-split"></i></div>
+      <div><div class="stat-value">{{ stats().pending }}</div><div class="stat-label">Por aprobar</div></div>
+    </div>
+    <div class="card-x stat-card fade-up" style="animation-delay: .1s">
+      <div class="stat-icon tone-info"><i class="bi bi-lightning-charge"></i></div>
+      <div><div class="stat-value">{{ stats().active }}</div><div class="stat-label">Activas</div></div>
+    </div>
+    <div class="card-x stat-card fade-up" style="animation-delay: .15s">
+      <div class="stat-icon tone-success"><i class="bi bi-check2-all"></i></div>
+      <div><div class="stat-value">{{ stats().done }}</div><div class="stat-label">Completadas</div></div>
+    </div>
+  </div>
+}
+
+<div class="grid grid-main-side">
+  <!-- Columna principal -->
+  <div class="d-flex flex-column gap-3">
+    @if (userService.canManageBookings()) {
+      <div class="card-x">
+        <div class="card-x-header">
+          <h3 class="card-x-title"><i class="bi bi-inbox"></i> Por aprobar</h3>
+          <span class="tag tone-warning">{{ pending().length }} pendiente(s)</span>
+        </div>
+        @if (loading()) {
+          <div class="card-x-body">@for (i of [1, 2, 3]; track i) { <div class="skeleton skeleton-row"></div> }</div>
+        } @else if (pending().length === 0) {
+          <div class="empty-state"><i class="bi bi-emoji-smile"></i><h4>Todo al día</h4><p>No hay reservas esperando aprobación.</p></div>
+        } @else {
+          <ul class="list-x">
+            @for (b of pending().slice(0, 6); track b.id) {
+              <li>
+                <div class="list-icon tone-warning"><i class="bi bi-hourglass-split"></i></div>
+                <div class="list-main" (click)="openBooking(b)">
+                  <div class="list-title">{{ lookup.name(b.resourceId) }}</div>
+                  <div class="list-sub">{{ b.studentId }} · {{ b.from | date: 'EEE d MMM, HH:mm' }} – {{ b.to | date: 'HH:mm' }}</div>
+                </div>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-soft-success btn-sm" [disabled]="busyId() === b.id" (click)="quickAction(b, 'APROBADA')"><i class="bi bi-check-lg"></i> Aprobar</button>
+                  <button class="btn btn-soft-danger btn-sm btn-icon" [disabled]="busyId() === b.id" (click)="quickAction(b, 'CANCELADA')" title="Cancelar"><i class="bi bi-x-lg"></i></button>
+                </div>
+              </li>
+            }
+          </ul>
+          @if (pending().length > 6) {
+            <div class="card-x-footer"><a routerLink="/bookings" [queryParams]="{ status: 'SOLICITADA' }">Ver las {{ pending().length }} reservas pendientes →</a></div>
+          }
+        }
+      </div>
+    }
+
+    <div class="card-x">
+      <div class="card-x-header">
+        <h3 class="card-x-title"><i class="bi bi-calendar-event"></i> {{ userService.canManageBookings() ? 'Próximas reservas' : 'Mis próximas reservas' }}</h3>
+        <a routerLink="/bookings" class="small fw-semibold">Ver todas</a>
+      </div>
+      @if (loading()) {
+        <div class="card-x-body">@for (i of [1, 2, 3]; track i) { <div class="skeleton skeleton-row"></div> }</div>
+      } @else if (upcoming().length === 0) {
+        <div class="empty-state">
+          <i class="bi bi-calendar2-plus"></i>
+          <h4>Sin reservas próximas</h4>
+          <p>Explora el catálogo y reserva un laboratorio o equipo.</p>
+          <a class="btn btn-primary btn-sm" routerLink="/catalog">Ir al catálogo</a>
+        </div>
+      } @else {
+        <ul class="list-x">
+          @for (b of upcoming(); track b.id) {
+            <li class="clickable" (click)="openBooking(b)">
+              <div class="date-tile">
+                <span>{{ b.from | date: 'MMM' }}</span>
+                <strong>{{ b.from | date: 'd' }}</strong>
+              </div>
+              <div class="list-main">
+                <div class="list-title">{{ lookup.name(b.resourceId) }}</div>
+                <div class="list-sub">{{ b.from | date: 'EEEE, HH:mm' }} – {{ b.to | date: 'HH:mm' }}@if (userService.canManageBookings()) { · {{ b.studentId }} }</div>
+              </div>
+              <app-status-badge [status]="b.status" />
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+
+  <!-- Columna lateral -->
+  <div class="d-flex flex-column gap-3">
+    @if (!userService.canManageBookings()) {
+      <div class="card-x next-card">
+        <div class="card-x-body">
+          <div class="next-label"><i class="bi bi-alarm"></i> Tu próxima reserva</div>
+          @if (nextBooking(); as nb) {
+            <div class="next-title">{{ lookup.name(nb.resourceId) }}</div>
+            <div class="next-when">{{ nb.from | date: 'EEEE d \'de\' MMMM' }}</div>
+            <div class="next-time">{{ nb.from | date: 'HH:mm' }} – {{ nb.to | date: 'HH:mm' }}</div>
+            <app-status-badge [status]="nb.status" />
+          } @else {
+            <div class="next-title">Sin reservas activas</div>
+            <div class="next-when">Cuando reserves, aparecerá aquí.</div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (userService.canManageBookings()) {
+      <div class="card-x">
+        <div class="card-x-header">
+          <h3 class="card-x-title"><i class="bi bi-play-circle"></i> Equipos en uso</h3>
+          <span class="tag tone-primary">{{ inUse().length }}</span>
+        </div>
+        @if (inUse().length === 0) {
+          <div class="card-x-body muted small">Ningún equipo entregado en este momento.</div>
+        } @else {
+          <ul class="list-x compact">
+            @for (b of inUse(); track b.id) {
+              <li class="clickable" (click)="openBooking(b)">
+                <div class="list-main">
+                  <div class="list-title">{{ lookup.name(b.resourceId) }}</div>
+                  <div class="list-sub">{{ b.studentId }} · devuelve {{ b.to | date: 'd MMM HH:mm' }}</div>
+                </div>
+                @if (isOverdue(b)) { <span class="tag tone-danger">Atrasado</span> }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="card-x">
+        <div class="card-x-header"><h3 class="card-x-title"><i class="bi bi-clock"></i> Agenda de hoy</h3></div>
+        @if (today().length === 0) {
+          <div class="card-x-body muted small">No hay reservas para hoy.</div>
+        } @else {
+          <ul class="list-x compact">
+            @for (b of today(); track b.id) {
+              <li class="clickable" (click)="openBooking(b)">
+                <span class="mono soft">{{ b.from | date: 'HH:mm' }}</span>
+                <div class="list-main"><div class="list-title">{{ lookup.name(b.resourceId) }}</div></div>
+                <app-status-badge [status]="b.status" />
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+
+    <div class="card-x">
+      <div class="card-x-header"><h3 class="card-x-title"><i class="bi bi-pie-chart"></i> Distribución por estado</h3></div>
+      <div class="card-x-body">
+        @if (distribution().length === 0) {
+          <div class="muted small">Aún no hay reservas.</div>
+        } @else {
+          <div class="stacked">
+            @for (d of distribution(); track d.status) {
+              <span [style.width.%]="d.pct" [style.background]="d.meta.color" [title]="d.meta.label + ': ' + d.count"></span>
+            }
+          </div>
+          <ul class="legend">
+            @for (d of distribution(); track d.status) {
+              <li><span class="dot" [style.background]="d.meta.color"></span> {{ d.meta.label }} <b>{{ d.count }}</b></li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+
+    @if (userService.isAdmin()) {
+      <div class="card-x">
+        <div class="card-x-header"><h3 class="card-x-title"><i class="bi bi-lightning"></i> Accesos rápidos</h3></div>
+        <div class="card-x-body quick-links">
+          <a routerLink="/report"><i class="bi bi-bar-chart-line tone-primary"></i> Reportes</a>
+          <a routerLink="/audit"><i class="bi bi-shield-check tone-success"></i> Auditoría</a>
+          <a routerLink="/rabbit"><i class="bi bi-diagram-3 tone-violet"></i> RabbitMQ</a>
+          <a routerLink="/alerts"><i class="bi bi-broadcast tone-warning"></i> Alertas</a>
+        </div>
+      </div>
+    }
+  </div>
+</div>

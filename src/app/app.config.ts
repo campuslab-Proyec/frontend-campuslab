@@ -1,10 +1,13 @@
 import {
   ApplicationConfig,
+  LOCALE_ID,
   provideZoneChangeDetection,
   provideAppInitializer,
   inject,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { routes } from './app.routes';
 import {
@@ -24,6 +27,9 @@ import {
   IPublicClientApplication,
 } from '@azure/msal-browser';
 import { environment } from '../environments/environment';
+
+// Fechas y números en español (lun, oct, 1.234,5) para todos los pipes
+registerLocaleData(localeEs);
 
 export function MSALInstanceFactory(): IPublicClientApplication {
   return new PublicClientApplication({
@@ -60,7 +66,8 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    provideRouter(routes, withComponentInputBinding()),
+    { provide: LOCALE_ID, useValue: 'es' },
     provideHttpClient(withInterceptorsFromDi()),
     { provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true },
     { provide: MSAL_INSTANCE, useFactory: MSALInstanceFactory },

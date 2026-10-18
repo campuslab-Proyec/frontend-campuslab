@@ -1,44 +1,103 @@
-<div style="padding: 20px;">
-  <h2>Auditoría de Eventos Académicos</h2>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Auditoría</h1>
+    <p class="page-subtitle">Trazabilidad de cada acción: quién solicitó, aprobó, entregó o recibió un equipo.</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-ghost" (click)="load()" [disabled]="loading()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+    <button class="btn btn-primary" (click)="exportCsv()" [disabled]="!filtered().length"><i class="bi bi-filetype-csv"></i> Exportar CSV</button>
+  </div>
+</div>
 
-  @if (error()) {
-  <p style="color: red;">Error: {{ error() }}</p>
-  }
+<div class="grid grid-4 mb-4">
+  <div class="card-x stat-card"><div class="stat-icon tone-primary"><i class="bi bi-activity"></i></div><div><div class="stat-value">{{ stats().total }}</div><div class="stat-label">Eventos registrados</div></div></div>
+  <div class="card-x stat-card"><div class="stat-icon tone-success"><i class="bi bi-calendar-day"></i></div><div><div class="stat-value">{{ stats().today }}</div><div class="stat-label">Eventos hoy</div></div></div>
+  <div class="card-x stat-card"><div class="stat-icon tone-violet"><i class="bi bi-person-badge"></i></div><div><div class="stat-value">{{ stats().actors }}</div><div class="stat-label">Usuarios distintos</div></div></div>
+  <div class="card-x stat-card"><div class="stat-icon tone-info"><i class="bi bi-journal-check"></i></div><div><div class="stat-value">{{ stats().bookings }}</div><div class="stat-label">Reservas auditadas</div></div></div>
+</div>
 
-  <form class="search-form" (ngSubmit)="search()">
-    <input type="text" placeholder="ID de reserva" [(ngModel)]="bookingId" name="bookingId">
-    <input type="text" placeholder="ID de usuario/actor" [(ngModel)]="actorId" name="actorId">
-    <button type="submit">Buscar</button>
-  </form>
-
-  @if (loading()) {
-  <p>Buscando eventos desde la API...</p>
-  } @else if (searched() && events().length === 0) {
-  <p>No se encontraron eventos para esa búsqueda.</p>
-  } @else if (events().length > 0) {
-  <table class="audit-table">
-    <thead>
-    <tr>
-      <th>Fecha</th>
-      <th>Reserva</th>
-      <th>Acción</th>
-      <th>Usuario</th>
-      <th>Rol</th>
-      <th>Detalle</th>
-    </tr>
-    </thead>
-    <tbody>
-    @for (item of events(); track item.id) {
-    <tr>
-      <td>{{ item.timestamp | date:'medium' }}</td>
-      <td>{{ item.bookingId }}</td>
-      <td><span class="action-badge">{{ item.action }}</span></td>
-      <td>{{ item.actorId }}</td>
-      <td>{{ item.actorRole }}</td>
-      <td>{{ item.detail || '—' }}</td>
-    </tr>
+@if (summary().length) {
+  <div class="chips mb-3">
+    @for (s of summary(); track s.action) {
+      <button class="chip" [class.active]="action() === s.action" (click)="setFilter(action, action() === s.action ? '' : s.action)">
+        <i class="bi" [class]="'bi ' + s.meta.icon"></i> {{ s.meta.label }} <span class="chip-count">{{ s.count }}</span>
+      </button>
     }
-    </tbody>
-  </table>
+  </div>
+}
+
+<div class="card-x mb-3">
+  <div class="card-x-body filters">
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+      <input class="form-control" placeholder="Reserva, usuario o detalle" [ngModel]="search()" (ngModelChange)="setFilter(search, $event)">
+    </div>
+    <select class="form-select" [ngModel]="action()" (ngModelChange)="setFilter(action, $event)" aria-label="Acción">
+      <option value="">Todas las acciones</option>
+      @for (a of actions(); track a) { <option [value]="a">{{ a }}</option> }
+    </select>
+    <select class="form-select" [ngModel]="role()" (ngModelChange)="setFilter(role, $event)" aria-label="Rol">
+      <option value="">Todos los roles</option>
+      @for (r of roles(); track r) { <option [value]="r">{{ r }}</option> }
+    </select>
+    <div class="date-range">
+      <input type="date" class="form-control" [ngModel]="from()" (ngModelChange)="setFilter(from, $event)" aria-label="Desde">
+      <span class="soft">→</span>
+      <input type="date" class="form-control" [ngModel]="to()" (ngModelChange)="setFilter(to, $event)" aria-label="Hasta">
+    </div>
+    @if (hasFilters()) {
+      <button class="btn btn-ghost btn-sm" (click)="clearFilters()"><i class="bi bi-x-circle"></i> Limpiar</button>
+    }
+  </div>
+</div>
+
+<div class="card-x">
+  @if (loading()) {
+    <div class="card-x-body">@for (i of [1, 2, 3, 4, 5, 6]; track i) { <div class="skeleton skeleton-row"></div> }</div>
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      <i class="bi bi-shield-exclamation"></i>
+      <h4>{{ events().length ? 'Sin resultados' : 'Aún no hay eventos' }}</h4>
+      <p>{{ events().length ? 'Ningún evento coincide con los filtros.' : 'Los eventos aparecen cuando se crean o actualizan reservas.' }}</p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table-x">
+        <thead>
+          <tr><th>Fecha</th><th>Reserva</th><th>Acción</th><th>Usuario</th><th>Rol</th><th>Detalle</th></tr>
+        </thead>
+        <tbody>
+          @for (e of paged(); track e.id) {
+            <tr>
+              <td>
+                <div>{{ e.timestamp | date: 'dd/MM/yyyy' }}</div>
+                <div class="soft small">{{ e.timestamp | date: 'HH:mm:ss' }}</div>
+              </td>
+              <td class="mono">#{{ e.bookingId }}</td>
+              <td>
+                @if (isStatus(e.action)) { <app-status-badge [status]="e.action" /> } @else { <span class="tag tone-neutral">{{ e.action }}</span> }
+              </td>
+              <td><span class="mono soft actor" [title]="e.actorId">{{ e.actorId }}</span></td>
+              <td>
+                @for (r of (e.actorRole || '').split(','); track $index) {
+                  @if (r) { <span class="tag tone-primary me-1">{{ r }}</span> }
+                }
+              </td>
+              <td class="muted">{{ e.detail || '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="card-x-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span>Mostrando {{ (page() - 1) * 25 + 1 }}–{{ (page() - 1) * 25 + paged().length }} de {{ filtered().length }} evento(s)</span>
+      @if (pages() > 1) {
+        <div class="d-flex gap-1 align-items-center">
+          <button class="btn btn-ghost btn-sm btn-icon" [disabled]="page() === 1" (click)="page.set(page() - 1)" aria-label="Anterior"><i class="bi bi-chevron-left"></i></button>
+          <span class="px-2">Página {{ page() }} de {{ pages() }}</span>
+          <button class="btn btn-ghost btn-sm btn-icon" [disabled]="page() === pages()" (click)="page.set(page() + 1)" aria-label="Siguiente"><i class="bi bi-chevron-right"></i></button>
+        </div>
+      }
+    </div>
   }
 </div>

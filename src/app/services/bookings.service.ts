@@ -10,13 +10,24 @@ export interface Booking {
   status?: string;
   from: string;
   to: string;
+  createdAt?: string;
+}
+
+/** Evento de auditoría de una reserva (cambio de estado, quién y cuándo). */
+export interface BookingHistoryEvent {
+  id: number;
+  bookingId: string;
+  action: string;
+  actorId: string;
+  actorRole: string;
+  timestamp: string;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class BookingsService {
-  private baseUrl = environment.bffUrl; // Apunta a 'http://localhost:8080/api/bff'
+  private baseUrl = environment.bffUrl;
 
   constructor(private http: HttpClient) {}
 
@@ -38,5 +49,10 @@ export class BookingsService {
 
   updateStatus(id: number, status: string): Observable<Booking> {
     return this.http.put<Booking>(`${this.baseUrl}/bookings/${id}/status`, { status });
+  }
+
+  /** Historial de cambios de estado (auditoría) para la línea de tiempo. */
+  history(id: number): Observable<BookingHistoryEvent[]> {
+    return this.http.get<BookingHistoryEvent[]>(`${this.baseUrl}/bookings/${id}/history`);
   }
 }

@@ -1,74 +1,227 @@
-<div style="padding: 20px;">
-  <h2>Gestión de Reservas</h2>
-
-  @if (error()) {
-  <p style="color: red;">Error: {{ error() }}</p>
-  }
-
-  <div class="filter-bar">
-    <label for="statusFilter">Filtrar por estado:</label>
-    <select id="statusFilter" [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
-      <option value="">Todos</option>
-      @for (status of statusOptions; track status) {
-      <option [value]="status">{{ status }}</option>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Reservas</h1>
+    <p class="page-subtitle">
+      @if (userService.canManageBookings()) {
+        Aprueba, prepara y registra entregas y devoluciones de laboratorios y equipos.
+      } @else {
+        Solicita laboratorios o equipos y sigue el estado de tus reservas.
       }
-    </select>
+    </p>
   </div>
+  <div class="page-actions">
+    <button class="btn btn-ghost" (click)="load()" [disabled]="loading()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+    <button class="btn btn-primary" (click)="toggleForm()">
+      <i class="bi" [class.bi-plus-lg]="!showForm()" [class.bi-x-lg]="showForm()"></i>
+      {{ showForm() ? 'Cerrar formulario' : 'Nueva reserva' }}
+    </button>
+  </div>
+</div>
 
-  <form class="booking-form" (ngSubmit)="createBooking()">
-    <h3>Nueva reserva</h3>
-    <div class="form-row">
-      <input type="text" placeholder="ID del recurso (ej. LAB-01)" [(ngModel)]="newBooking.resourceId" name="resourceId" required>
-      <input type="text" placeholder="ID del estudiante" [(ngModel)]="newBooking.studentId" name="studentId" required>
+<!-- ================= NUEVA RESERVA ================= -->
+@if (showForm()) {
+  <form class="card-x mb-4 fade-up" (ngSubmit)="createBooking()" novalidate>
+    <div class="card-x-header">
+      <h3 class="card-x-title"><i class="bi bi-calendar-plus"></i> Nueva reserva</h3>
+      <span class="muted small">Quedará en estado <b>Solicitada</b> hasta que un docente la apruebe</span>
     </div>
-    <div class="form-row">
-      <input type="datetime-local" [(ngModel)]="newBooking.from" name="from" required>
-      <input type="datetime-local" [(ngModel)]="newBooking.to" name="to" required>
-    </div>
-    <button type="submit">Crear reserva</button>
-  </form>
-
-  @if (loading()) {
-  <p>Cargando reservas desde la API...</p>
-  } @else if (bookings().length === 0) {
-  <p>No hay reservas para mostrar.</p>
-  } @else {
-  <table class="bookings-table">
-    <thead>
-    <tr>
-      <th>ID</th>
-      <th>Recurso</th>
-      <th>Estudiante</th>
-      <th>Desde</th>
-      <th>Hasta</th>
-      <th>Estado</th>
-      <th>Cambiar estado</th>
-    </tr>
-    </thead>
-    <tbody>
-    @for (item of bookings(); track item.id) {
-    <tr>
-      <td>{{ item.id }}</td>
-      <td>{{ item.resourceId }}</td>
-      <td>{{ item.studentId }}</td>
-      <td>{{ item.from | date:'short' }}</td>
-      <td>{{ item.to | date:'short' }}</td>
-      <td><span class="status-badge" [class]="item.status?.toLowerCase()">{{ item.status }}</span></td>
-      <td>
-        @if (userService.canManageBookings()) {
-        <select (change)="changeStatus(item, $any($event.target).value)">
-          <option value="" disabled selected>Seleccionar...</option>
-          @for (status of statusOptions; track status) {
-          <option [value]="status">{{ status }}</option>
+    <div class="card-x-body">
+      <div class="grid grid-2">
+        <div>
+          <label class="form-label" for="resourceId">Laboratorio o equipo</label>
+          <select id="resourceId" class="form-select" name="resourceId" [(ngModel)]="form.resourceId" (ngModelChange)="onFormChange()"
+                  [class.is-invalid]="submitted() && formErrors()['resourceId']">
+            <option value="">Selecciona…</option>
+            <optgroup label="Laboratorios">
+              @for (lab of lookup.labs(); track lab.code) {
+                <option [value]="lab.code">{{ lab.name }} ({{ lab.code }})</option>
+              }
+            </optgroup>
+            <optgroup label="Equipos e insumos">
+              @for (r of lookup.resources(); track r.code) {
+                <option [value]="r.code" [disabled]="r.stock <= 0">{{ r.name }} ({{ r.code }}){{ r.stock <= 0 ? ' — sin stock' : '' }}</option>
+              }
+            </optgroup>
+          </select>
+          @if (submitted() && formErrors()['resourceId']) { <div class="invalid-msg">{{ formErrors()['resourceId'] }}</div> }
+          @if (lookup.find(form.resourceId); as opt) {
+            <div class="form-text"><i class="bi" [class.bi-building]="opt.kind === 'lab'" [class.bi-cpu]="opt.kind === 'resource'"></i> {{ opt.detail }}</div>
           }
-        </select>
-        } @else {
-        <span style="color: #94a3b8;">Solo Admin/Docente</span>
-        }
-      </td>
-    </tr>
-    }
-    </tbody>
-  </table>
+        </div>
+        <div>
+          <label class="form-label" for="studentId">Estudiante</label>
+          <input id="studentId" class="form-control" name="studentId" [(ngModel)]="form.studentId"
+                 [readonly]="userService.isStudent()" placeholder="usuario@duocuc.cl"
+                 [class.is-invalid]="submitted() && formErrors()['studentId']">
+          @if (submitted() && formErrors()['studentId']) { <div class="invalid-msg">{{ formErrors()['studentId'] }}</div> }
+          @if (userService.isStudent()) { <div class="form-text"><i class="bi bi-person-check"></i> Se usa tu cuenta institucional</div> }
+        </div>
+        <div>
+          <label class="form-label" for="from">Desde</label>
+          <input id="from" type="datetime-local" class="form-control" name="from" [(ngModel)]="form.from" (ngModelChange)="onFormChange()"
+                 [class.is-invalid]="submitted() && formErrors()['from']">
+          @if (submitted() && formErrors()['from']) { <div class="invalid-msg">{{ formErrors()['from'] }}</div> }
+        </div>
+        <div>
+          <label class="form-label" for="to">Hasta</label>
+          <input id="to" type="datetime-local" class="form-control" name="to" [(ngModel)]="form.to" (ngModelChange)="onFormChange()"
+                 [class.is-invalid]="submitted() && formErrors()['to']">
+          @if (submitted() && formErrors()['to']) { <div class="invalid-msg">{{ formErrors()['to'] }}</div> }
+        </div>
+      </div>
+
+      @if (conflicts().length) {
+        <div class="alert-x tone-warning mt-3 mb-0">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div>
+            <b>Este horario se cruza con {{ conflicts().length }} reserva(s) del mismo recurso.</b>
+            <div class="small">
+              @for (c of conflicts(); track c.id) {
+                #{{ c.id }} · {{ c.from | date: 'd MMM HH:mm' }}–{{ c.to | date: 'HH:mm' }} ({{ label(c.status) }}){{ $last ? '' : ' · ' }}
+              }
+            </div>
+            <div class="small">Puedes enviarla igual si hay stock suficiente; el docente decidirá al aprobar.</div>
+          </div>
+        </div>
+      }
+    </div>
+    <div class="card-x-footer d-flex justify-content-end gap-2">
+      <button type="button" class="btn btn-ghost" (click)="toggleForm()">Cancelar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        @if (saving()) { <span class="spinner-border spinner-border-sm"></span> Enviando… } @else { <i class="bi bi-send"></i> Solicitar reserva }
+      </button>
+    </div>
+  </form>
+}
+
+<!-- ================= FILTROS ================= -->
+<div class="toolbar">
+  <div class="search-box">
+    <i class="bi bi-search"></i>
+    <input class="form-control" placeholder="Buscar por ID, recurso o estudiante" [ngModel]="search()" (ngModelChange)="search.set($event)">
+  </div>
+  <div class="segmented">
+    <button [class.active]="view() === 'list'" (click)="view.set('list')"><i class="bi bi-list-ul"></i> Lista</button>
+    <button [class.active]="view() === 'calendar'" (click)="view.set('calendar')"><i class="bi bi-calendar-week"></i> Calendario</button>
+  </div>
+  <div class="segmented">
+    <button [class.active]="!onlyMine()" (click)="onlyMine.set(false)">Todas</button>
+    <button [class.active]="onlyMine()" (click)="onlyMine.set(true)">Mis reservas</button>
+  </div>
+  @if (view() === 'list') {
+    <select class="form-select w-auto" [ngModel]="sort()" (ngModelChange)="sort.set($event)" aria-label="Ordenar">
+      <option value="recent">Más recientes</option>
+      <option value="upcoming">Por fecha de uso</option>
+    </select>
   }
 </div>
+
+<div class="chips mb-3">
+  <button class="chip" [class.active]="statusFilter() === ''" (click)="statusFilter.set('')">Todas <span class="chip-count">{{ counts()[''] }}</span></button>
+  @for (s of statuses; track s) {
+    <button class="chip" [class.active]="statusFilter() === s" (click)="statusFilter.set(s)">
+      <i class="bi" [class]="'bi ' + statusMeta[s].icon"></i> {{ statusMeta[s].label }} <span class="chip-count">{{ counts()[s] }}</span>
+    </button>
+  }
+</div>
+
+<!-- ================= LISTA / CALENDARIO ================= -->
+<div class="card-x">
+  @if (loading()) {
+    <div class="card-x-body">@for (i of [1, 2, 3, 4, 5]; track i) { <div class="skeleton skeleton-row"></div> }</div>
+  } @else if (view() === 'calendar') {
+    <app-week-calendar [bookings]="filtered()" (select)="open($event)" />
+  } @else if (filtered().length === 0) {
+    <div class="empty-state">
+      <i class="bi bi-calendar-x"></i>
+      <h4>No hay reservas para mostrar</h4>
+      <p>{{ search() || statusFilter() ? 'Prueba con otros filtros.' : 'Crea la primera con el botón "Nueva reserva".' }}</p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table-x">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Recurso</th>
+            <th>Estudiante</th>
+            <th>Horario</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of filtered(); track b.id) {
+            <tr class="clickable" (click)="open(b)">
+              <td class="mono soft">#{{ b.id }}</td>
+              <td>
+                <div class="fw-semibold">{{ lookup.name(b.resourceId) }}</div>
+                <div class="mono soft">{{ b.resourceId }}</div>
+              </td>
+              <td>{{ b.studentId }}</td>
+              <td>
+                <div class="first-cap">{{ b.from | date: 'EEE d MMM' }}</div>
+                <div class="soft small">{{ b.from | date: 'HH:mm' }} – {{ b.to | date: 'HH:mm' }}</div>
+              </td>
+              <td><app-status-badge [status]="b.status" /></td>
+              <td class="text-end" (click)="$event.stopPropagation()">
+                <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                  @for (s of actionsFor(b); track s) {
+                    <button class="btn btn-sm" [class]="'btn btn-sm ' + actionLabel[s].btn" [disabled]="busyId() === b.id"
+                            (click)="changeStatus(b, s)" [title]="actionLabel[s].text">
+                      <i class="bi" [class]="'bi ' + actionLabel[s].icon"></i>
+                      @if (s !== 'CANCELADA') { {{ actionLabel[s].text }} }
+                    </button>
+                  }
+                  <button class="btn btn-ghost btn-sm btn-icon" (click)="open(b)" title="Ver detalle"><i class="bi bi-eye"></i></button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="card-x-footer">{{ filtered().length }} reserva(s)</div>
+  }
+</div>
+
+<!-- ================= PANEL DE DETALLE ================= -->
+@if (selected(); as b) {
+  <div class="drawer-overlay" (click)="close()"></div>
+  <aside class="drawer" role="dialog" aria-label="Detalle de la reserva">
+    <div class="drawer-header">
+      <div>
+        <div class="soft small mono">Reserva #{{ b.id }}</div>
+        <h3 class="m-0 fs-5">{{ lookup.name(b.resourceId) }}</h3>
+      </div>
+      <button class="btn btn-ghost btn-icon" (click)="close()" aria-label="Cerrar"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="drawer-body">
+      <div class="mb-3"><app-status-badge [status]="b.status" /></div>
+      <dl class="detail-list">
+        <dt>Código</dt><dd class="mono">{{ b.resourceId }}</dd>
+        <dt>Estudiante</dt><dd>{{ b.studentId }}</dd>
+        <dt>Fecha</dt><dd class="first-cap">{{ b.from | date: "EEEE d 'de' MMMM yyyy" }}</dd>
+        <dt>Horario</dt><dd>{{ b.from | date: 'HH:mm' }} – {{ b.to | date: 'HH:mm' }} ({{ durationHours(b) }} h)</dd>
+        @if (b.createdAt) { <dt>Solicitada</dt><dd>{{ b.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd> }
+      </dl>
+
+      @if (actionsFor(b).length) {
+        <div class="d-flex gap-2 flex-wrap mb-4">
+          @for (s of actionsFor(b); track s) {
+            <button class="btn" [class]="'btn ' + actionLabel[s].btn" [disabled]="busyId() === b.id" (click)="changeStatus(b, s)">
+              <i class="bi" [class]="'bi ' + actionLabel[s].icon"></i> {{ actionLabel[s].text }}
+            </button>
+          }
+        </div>
+      }
+
+      <h4 class="fs-6 fw-bold mb-3"><i class="bi bi-signpost-split text-primary"></i> Seguimiento</h4>
+      @if (historyLoading()) {
+        @for (i of [1, 2, 3]; track i) { <div class="skeleton skeleton-line" style="height: 32px"></div> }
+      } @else {
+        <app-booking-timeline [status]="b.status" [events]="history()" />
+      }
+    </div>
+  </aside>
+}

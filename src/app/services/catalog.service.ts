@@ -20,13 +20,14 @@ export interface Laboratory {
   location: string;
   capacity: number;
   description?: string;
+  isAvailable?: boolean;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class CatalogService {
-  private baseUrl = environment.bffUrl; // Apunta a 'http://localhost:8080/api/bff'
+  private baseUrl = environment.bffUrl;
 
   constructor(private http: HttpClient) { }
 

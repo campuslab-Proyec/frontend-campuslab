@@ -17,7 +17,7 @@ export interface AuditEvent {
   providedIn: 'root',
 })
 export class AuditService {
-  private baseUrl = environment.bffUrl; // Apunta a 'http://localhost:8080/api/bff'
+  private baseUrl = environment.bffUrl;
 
   constructor(private http: HttpClient) {}
 
