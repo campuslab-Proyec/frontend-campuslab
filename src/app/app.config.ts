@@ -36,9 +36,10 @@ export function MSALInstanceFactory(): IPublicClientApplication {
     auth: {
       clientId: environment.msalConfig.auth.clientId,
       authority: environment.msalConfig.auth.authority,
-      // Siempre el origen real desde el que se abre la app (https://tu-dominio en EC2)
-      redirectUri: window.location.origin,
-      postLogoutRedirectUri: window.location.origin,
+      // Siempre el origen real desde el que se abre la app (https://tu-dominio en EC2), con "/" final:
+      // Entra ID compara la URI exacta y en el registro SPA están como http://localhost/ y https://…/
+      redirectUri: `${window.location.origin}/`,
+      postLogoutRedirectUri: `${window.location.origin}/`,
     },
     cache: { cacheLocation: 'localStorage' },
   });
