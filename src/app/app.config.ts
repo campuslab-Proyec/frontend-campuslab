@@ -77,10 +77,15 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(async () => {
       const msal = inject(MSAL_INSTANCE) as IPublicClientApplication;
       await msal.initialize();
-      const result = await msal.handleRedirectPromise();
-      // La cuenta que acaba de iniciar sesión pasa a ser la activa (si no, se usaría una vieja de la caché)
-      if (result?.account) {
-        msal.setActiveAccount(result.account);
+      try {
+        const result = await msal.handleRedirectPromise();
+        // La cuenta que acaba de iniciar sesión pasa a ser la activa (si no, se usaría una vieja de la caché)
+        if (result?.account) {
+          msal.setActiveAccount(result.account);
+        }
+      } catch (error) {
+        // Login cancelado o fallido en Microsoft (p. ej. AADB2C90091): la app arranca igual y muestra la bienvenida
+        console.warn('No se completó el inicio de sesión:', error);
       }
     }),
     MsalService,
