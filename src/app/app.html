@@ -13,7 +13,7 @@
         <button class="btn btn-icon landing-theme" (click)="themeService.toggle()" aria-label="Cambiar tema">
           <i class="bi" [class.bi-moon-stars]="themeService.theme() === 'light'" [class.bi-sun]="themeService.theme() === 'dark'"></i>
         </button>
-        <button class="btn btn-light" (click)="login()"><i class="bi bi-microsoft"></i> Iniciar sesión</button>
+        <button class="btn btn-login" (click)="login()"><i class="bi bi-microsoft"></i> Iniciar sesión</button>
       </div>
     </nav>
 
