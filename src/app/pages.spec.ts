@@ -45,6 +45,10 @@ const QUEUES = [
   { name: 'demo.admin.queue', messages: 0, messagesReady: 0, messagesUnacknowledged: 0, consumers: 0, durable: true, autoDelete: false, deadLetterExchange: null, messageTtl: 60000, managed: false },
 ];
 const EXCHANGES = [{ name: 'cmd.direct', type: 'direct', durable: true, autoDelete: false, managed: true }];
+const NODES = [
+  { name: 'rabbit@rabbitmq-1', running: true, type: 'disc', uptimeMs: 3_600_000, memoryUsed: 100, memoryLimit: 1000, partitions: 0 },
+  { name: 'rabbit@rabbitmq-2', running: true, type: 'disc', uptimeMs: 1_800_000, memoryUsed: 200, memoryLimit: 1000, partitions: 0 },
+];
 const BINDINGS = [{ exchange: 'cmd.direct', queue: 'q.cmd.email', routingKey: 'email.send' }];
 
 /** Responde las peticiones pendientes según la URL, hasta que no quede ninguna. */
@@ -64,6 +68,7 @@ function flushAll(http: HttpTestingController): void {
       else if (url.includes('/admin/queues')) req.flush(QUEUES);
       else if (url.includes('/admin/exchanges')) req.flush(EXCHANGES);
       else if (url.includes('/admin/bindings')) req.flush(BINDINGS);
+      else if (url.includes('/admin/nodes')) req.flush(NODES);
       else req.flush([]);
     }
   }
@@ -189,5 +194,7 @@ describe('Páginas (smoke)', () => {
     expect(el.textContent).toContain('mensaje(s) en colas DLQ');
     const deleteButtons = Array.from(el.querySelectorAll('button[title="Eliminar cola"]'));
     expect(deleteButtons.length).toBe(1); // solo demo.admin.queue (las propias están protegidas)
+    expect(el.textContent).toContain('rabbit@rabbitmq-2');
+    expect(el.textContent).toContain('Clúster OK');
   });
 });

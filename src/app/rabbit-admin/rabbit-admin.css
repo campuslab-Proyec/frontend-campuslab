@@ -32,6 +32,14 @@
 pre.code-x { max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word; margin: 0; }
 pre.code-error { border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
 
+.node { padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
+.node:first-child { padding-top: 0; }
+.node:last-of-type { border-bottom: none; }
+.node-head { display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem; }
+.node-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); flex-shrink: 0; }
+.node-dot.on { background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+.node-meta { font-size: 0.78rem; color: var(--text-muted); margin: 0.2rem 0 0 1.05rem; }
+
 .flow { display: flex; flex-direction: column; align-items: stretch; gap: 0.15rem; font-size: 0.84rem; }
 .flow-step { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
 .flow-step span { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; }

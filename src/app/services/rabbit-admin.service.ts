@@ -16,6 +16,16 @@ export interface QueueSummary {
   managed: boolean;
 }
 
+export interface NodeSummary {
+  name: string;
+  running: boolean;
+  type: string;
+  uptimeMs: number;
+  memoryUsed: number;
+  memoryLimit: number;
+  partitions: number;
+}
+
 export interface ExchangeSummary {
   name: string;
   type: string;
@@ -70,6 +80,10 @@ export type ApiResponse = Observable<HttpResponse<any>>;
 export class RabbitAdminService {
   private http = inject(HttpClient);
   private base = `${environment.bffUrl}/admin`;
+
+  listNodes(): Observable<NodeSummary[]> {
+    return this.http.get<NodeSummary[]>(`${this.base}/nodes`);
+  }
 
   listQueues(): Observable<QueueSummary[]> {
     return this.http.get<QueueSummary[]>(`${this.base}/queues`);

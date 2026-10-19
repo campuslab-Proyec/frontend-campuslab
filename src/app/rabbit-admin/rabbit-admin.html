@@ -310,6 +310,40 @@
   <!-- ================= ÚLTIMA LLAMADA A LA API ================= -->
   <div class="d-flex flex-column gap-3 side-col">
     <div class="card-x">
+      <div class="card-x-header">
+        <h3 class="card-x-title"><i class="bi bi-hdd-network"></i> Nodos del clúster</h3>
+        @if (nodes().length) {
+          <span class="tag" [class.tone-success]="clusterOk()" [class.tone-danger]="!clusterOk()">
+            {{ clusterOk() ? 'Clúster OK' : 'Revisar' }} · {{ nodes().length }} nodo(s)
+          </span>
+        }
+      </div>
+      <div class="card-x-body">
+        @if (!nodes().length) {
+          <p class="muted small mb-0">Sin información de nodos (la API de management no respondió).</p>
+        }
+        @for (n of nodes(); track n.name) {
+          <div class="node">
+            <div class="node-head">
+              <span class="node-dot" [class.on]="n.running"></span>
+              <span class="mono fw-semibold">{{ n.name }}</span>
+              <span class="tag tone-neutral ms-auto">{{ n.type === 'disc' ? 'disco' : n.type }}</span>
+            </div>
+            <div class="node-meta">
+              {{ n.running ? 'Corriendo hace ' + formatUptime(n.uptimeMs) : 'Detenido' }}
+              @if (n.partitions > 0) { · <span class="text-danger">{{ n.partitions }} partición(es)</span> }
+            </div>
+            @if (n.running) {
+              <div class="d-flex justify-content-between small muted mt-1"><span>Memoria</span><span>{{ memoryPct(n) | number: '1.0-0' }} %</span></div>
+              <div class="progress-x"><span [style.width.%]="memoryPct(n)" style="background: var(--primary)"></span></div>
+            }
+          </div>
+        }
+        <div class="form-text mt-2"><i class="bi bi-terminal"></i> En el servidor: <span class="mono">docker exec rabbitmq-2 rabbitmqctl cluster_status</span></div>
+      </div>
+    </div>
+
+    <div class="card-x">
       <div class="card-x-header"><h3 class="card-x-title"><i class="bi bi-terminal"></i> Última llamada a la API</h3></div>
       <div class="card-x-body">
         @if (lastCall(); as c) {

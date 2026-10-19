@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Observable, forkJoin } from 'rxjs';
 import {
-  BindingSummary, CreateExchangeRequest, CreateQueueRequest, ExchangeSummary, QueueSummary, RabbitAdminService,
+  BindingSummary, CreateExchangeRequest, CreateQueueRequest, ExchangeSummary, NodeSummary, QueueSummary, RabbitAdminService,
 } from '../services/rabbit-admin.service';
 import { ToastService, apiErrorMessage } from '../services/toast.service';
 import { ConfirmService } from '../services/confirm.service';
@@ -70,6 +70,10 @@ export class RabbitAdmin implements OnInit {
   protected queues = signal<QueueSummary[]>([]);
   protected exchanges = signal<ExchangeSummary[]>([]);
   protected bindings = signal<BindingSummary[]>([]);
+  protected nodes = signal<NodeSummary[]>([]);
+  /** Clúster sano: al menos 2 nodos, todos corriendo y sin particiones de red. */
+  protected clusterOk = computed(() =>
+    this.nodes().length >= 2 && this.nodes().every((n) => n.running && n.partitions === 0));
   protected loading = signal(true);
   protected online = signal(true);
   protected updatedAt = signal<Date | null>(null);
@@ -137,8 +141,10 @@ export class RabbitAdmin implements OnInit {
       queues: this.api.listQueues(),
       exchanges: this.api.listExchanges(),
       bindings: this.api.listBindings(),
+      nodes: this.api.listNodes(),
     }).subscribe({
-      next: ({ queues, exchanges, bindings }) => {
+      next: ({ queues, exchanges, bindings, nodes }) => {
+        this.nodes.set(nodes);
         this.queues.set(queues);
         this.exchanges.set(exchanges);
         this.bindings.set(bindings);
@@ -157,6 +163,20 @@ export class RabbitAdmin implements OnInit {
   setTab(tab: Tab): void {
     this.tab.set(tab);
     this.submitted.set(false);
+  }
+
+  /** "3 h 12 min" a partir de milisegundos. */
+  formatUptime(ms: number): string {
+    const min = Math.floor(ms / 60_000);
+    const h = Math.floor(min / 60);
+    const d = Math.floor(h / 24);
+    if (d > 0) return `${d} d ${h % 24} h`;
+    if (h > 0) return `${h} h ${min % 60} min`;
+    return `${min} min`;
+  }
+
+  memoryPct(n: NodeSummary): number {
+    return n.memoryLimit ? Math.min(100, (n.memoryUsed / n.memoryLimit) * 100) : 0;
   }
 
   isDlq(q: QueueSummary): boolean {
