@@ -38,12 +38,12 @@ const TEMPLATES: { label: string; icon: string; exchange: string; routingKey: st
     hint: 'Sin destinatario: basicNack sin reencolar y termina en q.cmd.email.dlq.',
   },
   {
-    label: 'Evento de reserva', icon: 'bi-calendar-event', exchange: 'cmd.direct', routingKey: 'booking.status.changed',
+    label: 'Evento de reserva (topic)', icon: 'bi-calendar-event', exchange: 'booking.events', routingKey: 'booking.aprobada',
     payload: {
       type: 'BOOKING_STATUS_CHANGED', eventId: 'demo-1',
       payload: { bookingId: 99, resourceId: 'EQ-OSC-01', studentId: 'alumno@duocuc.cl', status: 'APROBADA' },
     },
-    hint: 'Lo consume BookingEventConsumer (notify.booking.queue).',
+    hint: 'Topic exchange: la routing key booking.aprobada coincide con el binding booking.* de notify.booking.queue (BookingEventConsumer).',
   },
   {
     label: 'Ticket de preparación', icon: 'bi-tools', exchange: 'cmd.direct', routingKey: 'prep.ticket',

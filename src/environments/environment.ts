@@ -8,7 +8,11 @@ const BFF_SCOPE = 'api://8d19bb45-1842-43ce-b76c-4513b979df81/access_as_user';
 
 // Todo sale por el mismo origen HTTPS (ngrok -> nginx -> /api -> BFF)
 const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4200';
-const bffBaseUrl = `${origin}/api/bff`;
+// URL base de la API: por defecto el mismo origen (nginx -> /api -> BFF). Si el contenedor define
+// API_BASE_URL (p. ej. el API Gateway de AWS), llega en tiempo de ejecución por env.js (window.__env).
+const runtimeApiBase: string = (typeof window !== 'undefined' && (window as any).__env?.apiBaseUrl) || '';
+export const apiBaseUrl = (runtimeApiBase || origin).replace(/\/+$/, '');
+const bffBaseUrl = `${apiBaseUrl}/api/bff`;
 
 export const msalConfig: Configuration = {
   auth: {
@@ -37,5 +41,6 @@ export const environment = {
   protectedResources,
   apiConfig,
   bffUrl,
+  apiBaseUrl,
   azure: { clientId: CLIENT_ID, tenantId: TENANT_ID, redirectUri: `${origin}/` },
 };

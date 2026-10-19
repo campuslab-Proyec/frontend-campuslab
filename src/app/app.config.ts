@@ -47,8 +47,8 @@ export function MSALInstanceFactory(): IPublicClientApplication {
 
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  // Adjunta el token a las peticiones que vayan al BFF (mismo origen, /api/*)
-  protectedResourceMap.set(`${window.location.origin}/api/*`, environment.apiConfig.scopes);
+  // Adjunta el token a las peticiones que vayan al BFF: mismo origen (/api/*) o el API Gateway si está configurado
+  protectedResourceMap.set(`${environment.apiBaseUrl}/api/*`, environment.apiConfig.scopes);
   return {
     interactionType: InteractionType.Redirect,
     protectedResourceMap,
