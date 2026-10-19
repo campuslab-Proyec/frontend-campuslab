@@ -147,7 +147,7 @@ export class Alerts {
           setTimeout(() => {
             this.refresh();
             this.waiting.set(false);
-          }, fail ? 8000 : 500);
+          }, fail ? 9000 : 500);
         },
         error: (err) => {
           this.waiting.set(false);
