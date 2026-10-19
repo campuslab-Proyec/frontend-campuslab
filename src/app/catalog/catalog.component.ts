@@ -5,6 +5,11 @@ import { CatalogService, Laboratory, Resource } from '../services/catalog.servic
 import { CatalogLookupService } from '../services/catalog-lookup.service';
 import { UserService } from '../services/user.service';
 import { ToastService, apiErrorMessage } from '../services/toast.service';
+import { ConfirmService } from '../services/confirm.service';
+import { Booking, BookingsService } from '../services/bookings.service';
+import { isFinal } from '../shared/booking-status';
+import { firstValueFrom, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 type Tab = 'labs' | 'resources';
 
@@ -25,6 +30,8 @@ export class CatalogComponent implements OnInit {
   private catalogService = inject(CatalogService);
   private router = inject(Router);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
+  private bookingsService = inject(BookingsService);
   protected lookup = inject(CatalogLookupService);
   protected userService = inject(UserService);
 
@@ -34,6 +41,9 @@ export class CatalogComponent implements OnInit {
   protected showForm = signal(false);
   protected submitted = signal(false);
   protected saving = signal(false);
+  /** id del laboratorio o recurso que se está editando (null = formulario de alta). */
+  protected editingId = signal<number | null>(null);
+  protected deletingId = signal<number | null>(null);
 
   protected labForm: Laboratory = this.emptyLab();
   protected resourceForm: Resource = this.emptyResource();
@@ -67,7 +77,7 @@ export class CatalogComponent implements OnInit {
   setTab(tab: Tab): void {
     this.tab.set(tab);
     this.category.set('');
-    this.showForm.set(false);
+    this.closeForm();
   }
 
   categoryMeta(category: string) {
@@ -85,17 +95,94 @@ export class CatalogComponent implements OnInit {
     this.router.navigate(['/bookings'], { queryParams: { resource: code } });
   }
 
-  // ================= ALTA (solo Admin) =================
+  // ================= ALTA, EDICIÓN Y BAJA (solo Admin) =================
 
   toggleForm(): void {
-    this.showForm.update((v) => !v);
+    if (this.showForm()) {
+      this.closeForm();
+    } else {
+      this.showForm.set(true);
+    }
+  }
+
+  closeForm(): void {
+    this.showForm.set(false);
     this.submitted.set(false);
+    this.editingId.set(null);
+    this.labForm = this.emptyLab();
+    this.resourceForm = this.emptyResource();
+  }
+
+  editLab(lab: Laboratory): void {
+    this.labForm = { ...lab, description: lab.description ?? '', isAvailable: lab.isAvailable !== false };
+    this.openEdit(lab.id);
+  }
+
+  editResource(res: Resource): void {
+    this.resourceForm = { ...res, description: res.description ?? '', isAvailable: res.isAvailable !== false };
+    this.openEdit(res.id);
+  }
+
+  private openEdit(id?: number): void {
+    this.editingId.set(id ?? null);
+    this.submitted.set(false);
+    this.showForm.set(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async removeLab(lab: Laboratory): Promise<void> {
+    if (!lab.id || !(await this.confirmDelete('el laboratorio', lab.name, lab.code))) return;
+    this.deletingId.set(lab.id);
+    this.catalogService.deleteLaboratory(lab.id).subscribe({
+      next: () => this.afterDelete(`Laboratorio "${lab.name}" eliminado`),
+      error: (err) => this.onDeleteError(err),
+    });
+  }
+
+  async removeResource(res: Resource): Promise<void> {
+    if (!res.id || !(await this.confirmDelete('el recurso', res.name, res.code))) return;
+    this.deletingId.set(res.id);
+    this.catalogService.deleteResource(res.id).subscribe({
+      next: () => this.afterDelete(`Recurso "${res.name}" eliminado`),
+      error: (err) => this.onDeleteError(err),
+    });
+  }
+
+  /** Confirma la baja avisando si el código tiene reservas activas (las reservas guardan el código). */
+  private async confirmDelete(kind: string, name: string, code: string): Promise<boolean> {
+    const bookings = await firstValueFrom(this.bookingsService.getAll().pipe(catchError(() => of([] as Booking[]))));
+    const active = bookings.filter((b) => b.resourceId === code && !isFinal(b.status)).length;
+    return this.confirm.ask({
+      title: `¿Eliminar ${kind} "${name}"?`,
+      message: active
+        ? `Tiene ${active} reserva(s) activa(s). Las reservas se conservan, pero quedarán apuntando a un código (${code}) que ya no existe en el catálogo.`
+        : `Se eliminará ${code} del catálogo. Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      tone: 'danger',
+      icon: 'bi-trash',
+    });
+  }
+
+  private afterDelete(title: string): void {
+    this.toast.success(title);
+    this.deletingId.set(null);
+    if (this.editingId()) this.closeForm();
+    this.lookup.load(true);
+  }
+
+  private onDeleteError(err: unknown): void {
+    this.toast.error('No se pudo eliminar', apiErrorMessage(err));
+    this.deletingId.set(null);
   }
 
   protected labErrors(): Record<string, string> {
     const e: Record<string, string> = {};
-    if (!this.labForm.code.trim()) e['code'] = 'El código es obligatorio';
-    else if (!/^[A-Z0-9-]{3,20}$/.test(this.labForm.code.trim())) e['code'] = 'Usa 3–20 mayúsculas, números o guiones (ej. LAB-QUIM)';
+    if (!this.editingId()) {
+      const code = this.labForm.code.trim();
+      if (!code) e['code'] = 'El código es obligatorio';
+      else if (!/^[A-Z0-9-]{3,20}$/.test(code)) e['code'] = 'Usa 3–20 mayúsculas, números o guiones (ej. LAB-QUIM)';
+      else if (this.lookup.find(code)) e['code'] = 'Ya existe un laboratorio o recurso con ese código';
+    }
     if (!this.labForm.name.trim()) e['name'] = 'El nombre es obligatorio';
     if (!this.labForm.location.trim()) e['location'] = 'La ubicación es obligatoria';
     if (!this.labForm.capacity || this.labForm.capacity < 1) e['capacity'] = 'La capacidad debe ser mayor que 0';
@@ -104,8 +191,12 @@ export class CatalogComponent implements OnInit {
 
   protected resourceErrors(): Record<string, string> {
     const e: Record<string, string> = {};
-    if (!this.resourceForm.code.trim()) e['code'] = 'El código es obligatorio';
-    else if (!/^[A-Z0-9-]{3,20}$/.test(this.resourceForm.code.trim())) e['code'] = 'Usa 3–20 mayúsculas, números o guiones (ej. EQ-MULT-01)';
+    if (!this.editingId()) {
+      const code = this.resourceForm.code.trim();
+      if (!code) e['code'] = 'El código es obligatorio';
+      else if (!/^[A-Z0-9-]{3,20}$/.test(code)) e['code'] = 'Usa 3–20 mayúsculas, números o guiones (ej. EQ-MULT-01)';
+      else if (this.lookup.find(code)) e['code'] = 'Ya existe un laboratorio o recurso con ese código';
+    }
     if (!this.resourceForm.name.trim()) e['name'] = 'El nombre es obligatorio';
     if (!this.resourceForm.category) e['category'] = 'Selecciona una categoría';
     if (this.resourceForm.stock == null || this.resourceForm.stock < 0) e['stock'] = 'El stock no puede ser negativo';
@@ -116,8 +207,12 @@ export class CatalogComponent implements OnInit {
     this.submitted.set(true);
     if (Object.keys(this.labErrors()).length) return;
     this.saving.set(true);
-    this.catalogService.createLaboratory({ ...this.labForm, code: this.labForm.code.trim() }).subscribe({
-      next: (lab) => this.afterSave(`Laboratorio "${lab.name}" registrado`),
+    const id = this.editingId();
+    const request = id
+      ? this.catalogService.updateLaboratory(id, this.labForm)
+      : this.catalogService.createLaboratory({ ...this.labForm, code: this.labForm.code.trim() });
+    request.subscribe({
+      next: (lab) => this.afterSave(`Laboratorio "${lab.name}" ${id ? 'actualizado' : 'registrado'}`),
       error: (err) => this.onSaveError(err),
     });
   }
@@ -126,8 +221,14 @@ export class CatalogComponent implements OnInit {
     this.submitted.set(true);
     if (Object.keys(this.resourceErrors()).length) return;
     this.saving.set(true);
-    this.catalogService.createResource({ ...this.resourceForm, code: this.resourceForm.code.trim() }).subscribe({
-      next: (res) => this.afterSave(`Recurso "${res.name}" registrado`, 'Se publicó la notificación en RabbitMQ'),
+    const id = this.editingId();
+    const request = id
+      ? this.catalogService.updateResource(id, this.resourceForm)
+      : this.catalogService.createResource({ ...this.resourceForm, code: this.resourceForm.code.trim() });
+    request.subscribe({
+      next: (res) => id
+        ? this.afterSave(`Recurso "${res.name}" actualizado`)
+        : this.afterSave(`Recurso "${res.name}" registrado`, 'Se publicó la notificación en RabbitMQ'),
       error: (err) => this.onSaveError(err),
     });
   }
@@ -135,10 +236,7 @@ export class CatalogComponent implements OnInit {
   private afterSave(title: string, message?: string): void {
     this.toast.success(title, message);
     this.saving.set(false);
-    this.submitted.set(false);
-    this.showForm.set(false);
-    this.labForm = this.emptyLab();
-    this.resourceForm = this.emptyResource();
+    this.closeForm();
     this.lookup.load(true);
   }
 
@@ -148,10 +246,10 @@ export class CatalogComponent implements OnInit {
   }
 
   private emptyLab(): Laboratory {
-    return { name: '', code: '', location: '', capacity: 20, description: '' };
+    return { name: '', code: '', location: '', capacity: 20, description: '', isAvailable: true };
   }
 
   private emptyResource(): Resource {
-    return { name: '', code: '', category: 'EQUIPMENT', stock: 1, description: '' };
+    return { name: '', code: '', category: 'EQUIPMENT', stock: 1, description: '', isAvailable: true };
   }
 }

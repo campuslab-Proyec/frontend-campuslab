@@ -40,6 +40,14 @@ export class CatalogService {
     return this.http.post<Laboratory>(`${this.baseUrl}/catalog/labs`, laboratory);
   }
 
+  updateLaboratory(id: number, laboratory: Laboratory): Observable<Laboratory> {
+    return this.http.put<Laboratory>(`${this.baseUrl}/catalog/labs/${id}`, laboratory);
+  }
+
+  deleteLaboratory(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/catalog/labs/${id}`);
+  }
+
   // Métodos para Recursos
   getResources(): Observable<Resource[]> {
     return this.http.get<Resource[]>(`${this.baseUrl}/catalog/resources`);
@@ -47,5 +55,13 @@ export class CatalogService {
 
   createResource(resource: Resource): Observable<Resource> {
     return this.http.post<Resource>(`${this.baseUrl}/catalog/resources`, resource);
+  }
+
+  updateResource(id: number, resource: Resource): Observable<Resource> {
+    return this.http.put<Resource>(`${this.baseUrl}/catalog/resources/${id}`, resource);
+  }
+
+  deleteResource(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/catalog/resources/${id}`);
   }
 }

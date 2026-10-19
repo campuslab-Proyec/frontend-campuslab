@@ -151,6 +151,26 @@ describe('Páginas (smoke)', () => {
     expect(el.querySelectorAll('.cal-dayhead').length).toBe(7);
   });
 
+  it('Catálogo: solo Admin ve editar y eliminar; editar abre el formulario con el código bloqueado', async () => {
+    const admin = await render(CatalogComponent, ['Admin']);
+    expect(admin.el.querySelectorAll('button[title="Editar"]').length).toBe(1);
+    expect(admin.el.querySelectorAll('button[title="Eliminar"]').length).toBe(1);
+
+    const component = admin.fixture.componentInstance as any;
+    component.editLab(LABS[0]);
+    admin.fixture.detectChanges();
+    await admin.fixture.whenStable();
+    admin.fixture.detectChanges();
+    expect(admin.el.textContent).toContain('Editar laboratorio');
+    const code = admin.el.querySelector('input[name="code"]') as HTMLInputElement;
+    expect(code.readOnly).toBe(true);
+
+    TestBed.resetTestingModule();
+    const student = await render(CatalogComponent, ['Estudiante']);
+    expect(student.el.querySelectorAll('button[title="Editar"]').length).toBe(0);
+    expect(student.el.querySelectorAll('button[title="Eliminar"]').length).toBe(0);
+  });
+
   it('Auditoría muestra eventos y resumen por acción', async () => {
     const { el } = await render(Audit, ['Admin']);
     expect(el.querySelectorAll('tbody tr').length).toBe(2);
